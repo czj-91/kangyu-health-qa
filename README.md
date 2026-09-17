@@ -1,6 +1,6 @@
 # 康语 · 医疗健康知识智能问答系统
 
-![CI](https://github.com/YOUR_NAME/ai-qa-project/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/czj-91/kangyu-health-qa/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
