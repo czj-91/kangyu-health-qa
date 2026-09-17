@@ -3,6 +3,7 @@ FastAPI Web 后端 — 康语 · 医疗健康知识智能问答系统 (RAG 增�
 自带 Swagger 文档: http://localhost:5000/docs
 """
 import json as json_module
+import threading
 from contextlib import asynccontextmanager
 
 from config import init_env
@@ -24,6 +25,7 @@ from feedback import save_feedback, get_feedback_stats
 from logger_config import logger
 
 # ── 全局组件 ────────────────────────────────────────────
+_init_lock = threading.Lock()
 retriever: Retriever | None = None
 rag_engine: RAGEngine | None = None
 llm: LLMLike | None = None
@@ -37,26 +39,32 @@ def _assert_ready():
 
 def init_components():
     global retriever, rag_engine, llm
-    logger.info("=" * 60)
-    logger.info("初始化 康语 · 医疗健康知识智能问答系统 v2")
-    logger.info(f"LLM 后端: {LLM_BACKEND.upper()}")
-    logger.info("=" * 60)
+    # 双监听(IPv4 主进程 + IPv6 回环线程)会并发触发两次 lifespan,
+    # 用锁序列化, 避免模型/ChromaDB 重复初始化竞争
+    with _init_lock:
+        if rag_engine is not None:
+            logger.info("组件已初始化，跳过重复加载")
+            return
+        logger.info("=" * 60)
+        logger.info("初始化 康语 · 医疗健康知识智能问答系统 v2")
+        logger.info(f"LLM 后端: {LLM_BACKEND.upper()}")
+        logger.info("=" * 60)
 
-    retriever = Retriever()
-    assert retriever is not None
-    retriever.load()
+        retriever = Retriever()
+        assert retriever is not None
+        retriever.load()
 
-    # LLM 加载：支持本地模型和远程 API 两种后端
-    if RAG_MODE == "rag":
-        logger.info("RAG 模式，正在加载 LLM...")
-        llm = _load_llm()
-    else:
-        logger.info("LLM 将在首次 RAG 请求时延迟加载 (当前模式: {})", RAG_MODE)
-        if LLM_BACKEND == "api":
+        # LLM 加载：支持本地模型和远程 API 两种后端
+        if RAG_MODE == "rag":
+            logger.info("RAG 模式，正在加载 LLM...")
             llm = _load_llm()
+        else:
+            logger.info("LLM 将在首次 RAG 请求时延迟加载 (当前模式: {})", RAG_MODE)
+            if LLM_BACKEND == "api":
+                llm = _load_llm()
 
-    rag_engine = RAGEngine(retriever, llm)
-    logger.info("初始化完成！")
+        rag_engine = RAGEngine(retriever, llm)
+        logger.info("初始化完成！")
 
 
 def _load_llm() -> LLMLike | None:
@@ -351,8 +359,24 @@ async def feedback_stats():
 
 # ── 启动 ────────────────────────────────────────────────
 
+def _serve_ipv6_loopback() -> None:
+    """额外监听 IPv6 回环 (::1)。
+
+    Windows 上浏览器解析 localhost 时优先尝试 ::1，若服务只绑定
+    0.0.0.0 会出现"拒绝连接"。本线程让 http://localhost:PORT 可用，
+    绑定失败不影响主 IPv4 服务。
+    """
+    try:
+        cfg = uvicorn.Config(app, host="::1", port=PORT, log_level="warning")
+        uvicorn.Server(cfg).run()
+    except OSError as e:
+        logger.warning("IPv6 回环端口绑定失败（不影响 IPv4 访问）: {}", e)
+
+
 if __name__ == "__main__":
+    import threading
     import uvicorn
-    logger.info(f"启动服务: http://localhost:{PORT}")
+    logger.info(f"启动服务: http://localhost:{PORT}  (或 http://127.0.0.1:{PORT})")
     logger.info(f"Swagger:  http://localhost:{PORT}/docs")
+    threading.Thread(target=_serve_ipv6_loopback, daemon=True).start()
     uvicorn.run(app, host=HOST, port=PORT, log_level="info" if not DEBUG else "debug")
