@@ -277,19 +277,17 @@ async def ask_stream(req: AskRequest):
 
     def generate():
         if not results:
-            yield f"data: {json_module.dumps({'type': 'answer', 'text': '抱歉，未找到相关答案。'})}\n\n"
+            yield f"data: {json_module.dumps({'type': 'answer', 'text': '抱歉，未找到相关答案。'}, ensure_ascii=False)}\n\n"
             yield f"data: {json_module.dumps({'type': 'done'})}\n\n"
             return
 
         best = results[0]
 
-        # 检索模式
+        # 检索模式: 先立即下发首段(消除人为整段缓冲延迟), done 携带完整答案兜底
         if engine.effective_mode == "retrieval":
             full_answer = best["answer"]
-            chunk_size = 30
-            for i in range(0, len(full_answer), chunk_size):
-                chunk = full_answer[i:i + chunk_size]
-                yield f"data: {json_module.dumps({'type': 'token', 'text': chunk})}\n\n"
+            first = full_answer[:30]
+            yield f"data: {json_module.dumps({'type': 'token', 'text': first}, ensure_ascii=False)}\n\n"
             yield f"data: {json_module.dumps({'type': 'done', 'answer': full_answer, 'mode': 'retrieval', 'similarity': best['similarity'], 'knowledge_point': best['knowledge_point'], 'sources': [{'question': r['question'], 'knowledge_point': r['knowledge_point'], 'similarity': r['similarity']} for r in results], 'results': results}, ensure_ascii=False)}\n\n"
             return
 

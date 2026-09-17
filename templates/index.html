@@ -14,6 +14,8 @@
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/highlight.js/11.9.0/styles/night-owl.min.css">
     <script src="https://cdn.bootcdn.net/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/marked/12.0.1/marked.min.js"></script>
+    <!-- XSS 防线: LLM 输出与知识库原文经 Markdown 渲染前一律 DOMPurify 消毒 -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
 
     <style>
         /* ═══════════════════════════════════════════════════════════════
@@ -258,7 +260,7 @@
             color: var(--text-primary);
             border-color: var(--border-default);
         }
-        .conv-item:hover .conv-del { opacity: 1; }
+        .conv-item:hover .conv-del, .conv-item:focus-within .conv-del { opacity: 1; }
         .conv-item.active {
             color: var(--text-primary);
             background: rgba(13,148,136,0.06);
@@ -279,8 +281,6 @@
             border-radius: 4px; transition: all var(--transition); flex-shrink: 0; border: none; background: none; cursor: pointer;
         }
         .conv-del:hover { color: var(--danger); background: rgba(248,113,113,0.1); }
-            flex-shrink: 0;
-        }
 
         /* 侧边栏底部统计 */
         .sidebar-footer {
@@ -1260,7 +1260,7 @@
     <!-- 对话列表 -->
     <div class="conv-list-label">历史对话</div>
     <div class="conv-list" id="convList">
-        <div class="conv-item active" data-sid="" onclick="switchConversation('')">
+        <div class="conv-item active" data-sid="">
             <span class="conv-dot"></span><span class="conv-title">当前对话</span>
         </div>
     </div>
@@ -1282,11 +1282,11 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
         <span class="logo-sm">康语 · 健康问答</span>
-        <div class="mode-pill rag" id="modePill" onclick="toggleMode()" title="点击切换模式">RAG 生成</div>
+        <button type="button" class="mode-pill rag" id="modePill" onclick="toggleMode()" title="点击切换模式" aria-pressed="false">RAG 生成</button>
         <div class="spacer"></div>
         <div class="top-k-slider" title="检索数量">
             <span>Top-K</span>
-            <input type="range" id="topKSlider" min="1" max="10" value="3" oninput="document.getElementById('topKVal').textContent=this.value">
+            <input type="range" id="topKSlider" min="1" max="10" value="3" aria-label="检索数量 Top-K">
             <span class="top-k-val" id="topKVal">3</span>
         </div>
         <button class="top-btn" onclick="newSession()">
@@ -1297,7 +1297,7 @@
             <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2.75 3.5a.75.75 0 000 1.5h.5l.93 8.35A2 2 0 006.14 15h3.72a2 2 0 001.96-1.65l.93-8.35h.5a.75.75 0 000-1.5h-2.03a2.75 2.75 0 00-5.44 0H2.75zM5.78 5h4.44l-.87 7.83a.5.5 0 01-.49.42H7.14a.5.5 0 01-.49-.42L5.78 5z"/></svg>
             清屏
         </button>
-        <button class="theme-toggle" onclick="toggleTheme()" title="切换明暗主题" id="themeToggle">
+        <button class="theme-toggle" onclick="toggleTheme()" title="切换明暗主题" aria-label="切换明暗主题" aria-pressed="false" id="themeToggle">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" id="themeIconSun"><path d="M8 1a.5.5 0 01.5.5v1a.5.5 0 01-1 0v-1A.5.5 0 018 1zm0 10a3 3 0 100-6 3 3 0 000 6zm6.5-2.5a.5.5 0 010 1h-1a.5.5 0 010-1h1zM8 13a.5.5 0 01.5.5v1a.5.5 0 01-1 0v-1A.5.5 0 018 13zm-6.5-4.5a.5.5 0 010 1h-1a.5.5 0 010-1h1zm.646-5.854a.5.5 0 01.708 0l.707.707a.5.5 0 01-.708.708l-.707-.707a.5.5 0 010-.708zm9 9a.5.5 0 01.708 0l.707.707a.5.5 0 01-.708.708l-.707-.707a.5.5 0 010-.708zM2.646 11.854a.5.5 0 010-.708l.707-.707a.5.5 0 01.708.708l-.707.707a.5.5 0 01-.708 0zm9-9a.5.5 0 010-.708l.707-.707a.5.5 0 01.708.708l-.707.707a.5.5 0 01-.708 0z"/></svg>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" id="themeIconMoon" style="display:none;"><path d="M6 .278a.768.768 0 01.08.858 7.208 7.208 0 00-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 01.81.316.733.733 0 01-.031.893A8.349 8.349 0 018.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 016 .278zM4.858 1.311A7.269 7.269 0 001.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.318 7.318 0 005.532-2.299 8.38 8.38 0 01-1.82.18c-4.346 0-7.867-3.488-7.867-7.795 0-1.36.37-2.622 1.007-3.718-.46.106-.905.246-1.338.418z"/></svg>
         </button>
@@ -1330,6 +1330,7 @@
             <div class="input-wrap">
                 <svg class="search-icon" width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M11.742 10.344a6.5 6.5 0 10-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 001.415-1.414l-3.85-3.85a1.007 1.007 0 00-.115-.1zM12 6.5a5.5 5.5 0 11-11 0 5.5 5.5 0 0111 0z"/></svg>
                 <textarea id="questionInput"
+                       aria-label="输入健康或养生问题"
                        placeholder="输入健康 / 养生问题，Enter 发送，Shift+Enter 换行..."
                        rows="1" autocomplete="off" autofocus></textarea>
                 <button class="send-btn" id="sendBtn" onclick="askQuestion()" title="发送 (Enter)" aria-label="发送消息">
@@ -1364,9 +1365,19 @@
     let topK = 3;
     let abortController = null;
     let lastUserQuestion = '';
+    let renderQueued = false;      // token 重渲染节流标记
+    let stopRequested = false;     // 用户主动停止生成的标记
+    const chipData = new Map();    // 来源 chip 索引 → {question}，供事件委托读取，避免把原文塞进 HTML
+    const sampleData = new Map();  // 示例 chip 索引 → {question}，DOM 只放 data-qid 索引
 
     marked.setOptions({ breaks: true, gfm: true });
     hljs.configure({ languages: ['python','bash','javascript','java','cpp','sql','json','yaml'] });
+
+    // Markdown 渲染统一入口: marked 解析 + DOMPurify 消毒。
+    // 任何生成文本/检索原文进入 innerHTML 前都必须走 md(), 禁止直接 marked.parse。
+    function md(text) {
+        return DOMPurify.sanitize(marked.parse(text || ''));
+    }
 
     // ── Theme ──────────────────────
     function getTheme() {
@@ -1387,6 +1398,8 @@
         const moon = document.getElementById('themeIconMoon');
         if (t === 'light') { sun.style.display = 'none'; moon.style.display = ''; }
         else { sun.style.display = ''; moon.style.display = 'none'; }
+        const btn = document.getElementById('themeToggle');
+        if (btn) btn.setAttribute('aria-pressed', t === 'light' ? 'true' : 'false');
     }
 
     // ── Sidebar mobile ─────────────
@@ -1428,22 +1441,79 @@
         document.addEventListener('keydown', e => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); inp.focus(); }
         });
-        document.getElementById('topKSlider').addEventListener('input', function() { topK = parseInt(this.value); });
+        document.getElementById('topKSlider').addEventListener('input', function() {
+            topK = parseInt(this.value, 10);
+            document.getElementById('topKVal').textContent = this.value;
+        });
+
+        // 事件委托: 样本 chip / 来源 chip / 历史列表 — 集中处理, 内联 onclick 全部移除
+        const quickAsks = document.getElementById('quickAsks');
+        quickAsks.addEventListener('click', e => {
+            const chip = e.target.closest('.quick-chip');
+            if (!chip) return;
+            if (chip.dataset.retry) { loadSamples(); return; }
+            const s = sampleData.get(parseInt(chip.dataset.qid, 10));
+            if (s) askSample(s.question);
+        });
+        const chatArea = document.getElementById('chatArea');
+        chatArea.addEventListener('click', e => {
+            const chip = e.target.closest('.source-chip');
+            if (chip) {
+                const s = chipData.get(parseInt(chip.dataset.idx, 10));
+                if (s && !isStreaming) askSample(s.question);
+                return;
+            }
+            const fb = e.target.closest('[data-fb]');
+            if (fb) { submitFeedback(fb, fb.dataset.fb); return; }
+            const retry = e.target.closest('[data-retry]');
+            if (retry) {
+                if (retry.dataset.retry === 'self') retryMessage(retry.closest('.bot-msg'));
+                else retryMessage(currentBotDiv);
+                return;
+            }
+            const copy = e.target.closest('[data-action="copy"]');
+            if (copy) { copyAnswer(copy); return; }
+        });
+        const convList = document.getElementById('convList');
+        convList.addEventListener('click', e => {
+            const del = e.target.closest('.conv-del');
+            if (del) { deleteConversation(del.dataset.del, e); return; }
+            const item = e.target.closest('.conv-item');
+            if (item) switchConversation(item.dataset.sid);
+        });
+        // 键盘可达: 空格/回车激活 role=button 的 chip
+        document.addEventListener('keydown', e => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            const el = e.target;
+            if (!el.matches) return;
+            if (el.matches('.source-chip')) { e.preventDefault(); el.click(); }
+            else if (el.matches('.quick-chip')) { e.preventDefault(); el.click(); }
+        });
 
         // Scroll-to-bottom visibility
-        const chatArea = document.getElementById('chatArea');
-        chatArea.addEventListener('scroll', () => {
+        const chatArea2 = document.getElementById('chatArea');
+        chatArea2.addEventListener('scroll', () => {
             const btn = document.getElementById('scrollBottomBtn');
-            const dist = chatArea.scrollHeight - chatArea.scrollTop - chatArea.clientHeight;
+            const dist = chatArea2.scrollHeight - chatArea2.scrollTop - chatArea2.clientHeight;
             btn.classList.toggle('visible', dist > 150);
         });
     });
 
     async function initSession(quiet) {
+        // 刷新恢复: 上次会话若在本地有存档 → 复用其 sid 并恢复 DOM; 否则服务端新建
+        const savedSid = localStorage.getItem('qa-current-sid');
+        if (!quiet && savedSid && localStorage.getItem('qa-conv-' + savedSid)) {
+            sessionId = savedSid;
+            restoreConversation(savedSid);
+            renderConvList();
+            checkHealth();
+            return;
+        }
         try {
             const r = await fetch('/api/conversation/new', { method: 'POST' });
             const d = await r.json();
             sessionId = d.session_id;
+            localStorage.setItem('qa-current-sid', sessionId);
         } catch(e) { /* ignore */ }
         if (!quiet) renderConvList();
         checkHealth();
@@ -1473,6 +1543,7 @@
             pill.textContent = '检索匹配';
             pill.className = 'mode-pill retrieval';
         }
+        pill.setAttribute('aria-pressed', currentMode === 'retrieval' ? 'true' : 'false');
     }
 
     function toggleMode() {
@@ -1489,6 +1560,7 @@
             const r = await fetch('/api/conversation/new', { method: 'POST' });
             const d = await r.json();
             sessionId = d.session_id;
+            localStorage.setItem('qa-current-sid', sessionId);
             clearChatDOM();
             renderConvList();
             toast('已创建新对话', 'success');
@@ -1590,6 +1662,7 @@
         if (sid) {
             // Load a saved conversation
             sessionId = sid;
+            localStorage.setItem('qa-current-sid', sessionId);
             restoreConversation(sid);
             renderConvList();
         } else {
@@ -1626,21 +1699,20 @@
         const now = Date.now();
         // Always show current session at top
         const isCurrentSaved = sessionId && list.find(c => c.id === sessionId);
-        html += `<div class="conv-item${isCurrentSaved ? '' : ' active'}" data-sid="" onclick="switchConversation('')">
+        html += `<div class="conv-item${isCurrentSaved ? '' : ' active'}" data-sid="">
             <span class="conv-dot"></span><span class="conv-title">当前对话</span>
         </div>`;
-        // Then show saved conversations
+        // Then show saved conversations — 用 data-sid + 事件委托, 不内联 onclick(避免 id 注入 & 更干净)
         list.forEach(c => {
             const isActive = c.id === sessionId;
-            // Skip the current session if it's already shown as "当前对话" above
             const timeStr = formatRelativeTime(c.time, now);
-            html += `<div class="conv-item${isActive ? ' active' : ''}" data-sid="${c.id}" onclick="switchConversation('${c.id}')">
+            html += `<div class="conv-item${isActive ? ' active' : ''}" data-sid="${escHtml(c.id)}">
                 <span class="conv-dot"></span>
                 <span class="conv-info">
                     <span class="conv-title">${escHtml(c.title)}</span>
                     <span class="conv-time">${timeStr} · ${c.msgCount || 0} 条问答</span>
                 </span>
-                <button class="conv-del" onclick="deleteConversation('${c.id}', event)" title="删除">×</button>
+                <button class="conv-del" data-del="${escHtml(c.id)}" title="删除" aria-label="删除该对话">×</button>
             </div>`;
         });
         // If no saved conversations, show hint
@@ -1673,20 +1745,24 @@
     }
 
     // ── Sample Questions ────────────
+    // 问题原文只存在 JS 内存(sampleData)里, DOM 只放索引 → 引号/HTML 均无法注入
     async function loadSamples() {
         const c = document.getElementById('quickAsks');
+        sampleData.clear();
         try {
             const r = await fetch('/api/sample_questions');
             const d = await r.json();
             if (d.samples && d.samples.length > 0) {
-                c.innerHTML = d.samples.slice(0, 8).map(s =>
-                    `<span class="quick-chip" onclick="askSample('${escHtml(s.question)}')" title="${escHtml(s.knowledge_point)}">
-                        ${escHtml(s.question.length > 30 ? s.question.substring(0, 30) + '...' : s.question)}
-                    </span>`
-                ).join('');
+                c.innerHTML = d.samples.slice(0, 8).map((s, i) => {
+                    sampleData.set(i, { question: String(s.question || '') });
+                    const shown = s.question.length > 30 ? s.question.substring(0, 30) + '...' : s.question;
+                    return `<span class="quick-chip" role="button" tabindex="0" data-qid="${i}" title="${escHtml(s.knowledge_point || '')}">
+                        ${escHtml(shown)}
+                    </span>`;
+                }).join('');
             }
         } catch(e) {
-            c.innerHTML = '<span class="quick-chip" onclick="loadSamples()" style="cursor:pointer;" title="点击重新加载">加载失败，点击重试</span>';
+            c.innerHTML = '<span class="quick-chip" data-retry="1" role="button" tabindex="0" style="cursor:pointer;" title="点击重新加载">加载失败，点击重试</span>';
         }
     }
 
@@ -1702,6 +1778,7 @@
         if (!question || isStreaming) return;
 
         isStreaming = true;
+        stopRequested = false;
         lastUserQuestion = question;
         const btn = document.getElementById('sendBtn');
         const stopBtn = document.getElementById('stopBtn');
@@ -1717,7 +1794,8 @@
             input.style.height = 'auto';
         }
 
-        const botDiv = retryText ? createBotMessage() : createBotMessage();
+        const botDiv = createBotMessage();
+        botDiv.dataset.question = question;   // JS 赋值, 非字符串拼接 → 注入安全
         currentBotDiv = botDiv;
         currentBotBubble = botDiv.querySelector('.bubble');
         currentAnswerText = '';
@@ -1772,22 +1850,26 @@
             hideProgress(progressEl);
         } catch(e) {
             hideProgress(progressEl);
-            if (e.name !== 'AbortError') {
-                const errMsg = e.message.includes('Failed to fetch') ? '网络连接失败，请检查网络后重试' : e.message;
-                currentBotBubble.innerHTML = `<span style="color:var(--danger);">请求失败: ${escHtml(errMsg)}</span>
-                    <button class="retry-btn" onclick="retryLast()"><svg viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M8 3a5 5 0 104.546 2.914.5.5 0 01.908-.417A6 6 0 118 2v1z"/><path d="M8 4.466V.534a.25.25 0 01.41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 018 4.466z"/></svg>重试</button>`;
-                toast('请求失败: ' + errMsg, 'error');
+            const aborted = e.name === 'AbortError';
+            // 用户主动停止 → 保留已生成正文走 finalize; 其余(网络中断/服务端错误) → 显示错误与重试
+            if (!aborted) {
+                if (!currentAnswerText) {
+                    const errMsg = e.message.includes('Failed to fetch') ? '网络连接失败，请检查网络后重试' : e.message;
+                    currentBotBubble.innerHTML = `<span style="color:var(--danger);">请求失败: ${escHtml(errMsg)}</span>
+                        <button class="retry-btn" data-retry="last"><svg viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M8 3a5 5 0 104.546 2.914.5.5 0 01.908-.417A6 6 0 118 2v1z"/><path d="M8 4.466V.534a.25.25 0 01.41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 018 4.466z"/></svg>重试</button>`;
+                }
+                toast('请求失败: ' + e.message, 'error');
             }
         }
 
-        // Finalize
+        // Finalize: 正常完成走 done 元数据; 中途停止/无 done 事件也按空元数据渲染完整操作行
         if (currentAnswerMeta) {
             finalizeAnswer(botDiv, currentAnswerMeta);
         } else if (currentAnswerText) {
-            currentBotBubble.innerHTML = marked.parse(currentAnswerText) + '</div>';
-            enhanceCodeBlocks(currentBotBubble);
-            addRetryButton(botDiv);
-            addPerMessageDisclaimer(botDiv);
+            finalizeAnswer(botDiv, {});
+        } else if (stopRequested && currentBotBubble === botDiv.querySelector('.bubble')) {
+            // 首个 token 前就停止: 防止气泡永久卡在加载动画
+            currentBotBubble.innerHTML = '<span style="color:var(--text-muted);font-size:12px;">已停止生成</span>';
         }
 
         isStreaming = false;
@@ -1800,15 +1882,19 @@
     }
 
     function stopGeneration() {
+        stopRequested = true;
         if (abortController) { abortController.abort(); }
         const stopBtn = document.getElementById('stopBtn');
         stopBtn.classList.remove('visible');
         toast('已停止生成', 'success');
     }
 
-    function retryLast() {
-        if (currentBotDiv) currentBotDiv.remove();
-        askQuestion(lastUserQuestion);
+    // 按条重新生成: 移除该条回答, 用其自身的问题重问(而非全局最后一条)
+    function retryMessage(botDiv) {
+        if (!botDiv || isStreaming) return;
+        const q = botDiv.dataset.question || lastUserQuestion;
+        botDiv.remove();
+        askQuestion(q);
     }
 
     // ── RAG Progress ──────────────
@@ -1841,10 +1927,17 @@
                 currentAnswerMeta = data;
                 break;
             case 'error':
-                currentBotBubble.innerHTML += `<span style="color:var(--danger);">${escHtml(data.text)}</span>`;
+                // 流中途出错: 保留已生成正文, 错误信息追加在独立节点
+                appendToken('\n\n');
+                const errSpan = document.createElement('span');
+                errSpan.style.color = 'var(--danger)';
+                errSpan.textContent = '⚠ ' + (data.text || '生成出错');
+                currentBotBubble.appendChild(errSpan);
                 break;
             case 'answer':
-                currentBotBubble.innerHTML = marked.parse(data.text);
+                // 兜底话术(无检索结果): 计入 currentAnswerText, 否则 finalize 会清空
+                currentAnswerText = data.text || '';
+                currentBotBubble.innerHTML = md(currentAnswerText);
                 enhanceCodeBlocks(currentBotBubble);
                 break;
         }
@@ -1852,9 +1945,16 @@
 
     function appendToken(text) {
         currentAnswerText += text;
-        currentBotBubble.innerHTML = marked.parse(currentAnswerText) + '<span class="typing-cursor"></span>';
-        enhanceCodeBlocks(currentBotBubble);
-        scrollToBottom();
+        // 节流重渲染: 合并高频 token, 避免每片都对全文重跑 Markdown 解析
+        if (!renderQueued) {
+            renderQueued = true;
+            requestAnimationFrame(() => {
+                renderQueued = false;
+                if (!currentBotBubble) return;
+                currentBotBubble.innerHTML = md(currentAnswerText) + '<span class="typing-cursor"></span>';
+                scrollToBottom();
+            });
+        }
     }
 
     function finalizeAnswer(botDiv, data) {
@@ -1863,8 +1963,8 @@
         const answerContent = currentAnswerText || data.answer || '';
         let html = '';
 
-        // Answer content
-        html += `<div class="answer-content">${marked.parse(answerContent)}</div>`;
+        // Answer content (md = marked + DOMPurify)
+        html += `<div class="answer-content">${md(answerContent)}</div>`;
 
         // Score bar
         if (data.similarity != null) {
@@ -1883,14 +1983,15 @@
         }
         html += `</div>`;
 
-        // Sources
+        // Sources — data-* + 事件委托, 问题原文不进 HTML 文本也不进属性
         if (data.sources && data.sources.length > 0) {
             html += `<div class="source-chips">`;
             data.sources.forEach((s, i) => {
                 const pct = (s.similarity * 100).toFixed(0);
-                html += `<span class="source-chip" onclick="askSample('${escHtml(s.question)}')" title="点击重新搜索: ${escHtml(s.question)}">
+                html += `<span class="source-chip" data-idx="${i}" role="button" tabindex="0" title="点击重新搜索">
                     <strong>[${i+1}]</strong> ${escHtml(s.knowledge_point)}&nbsp;<span style="opacity:0.7;">${pct}%</span>
                 </span>`;
+                chipData.set(i, { question: String(s.question || '') });
             });
             html += `</div>`;
         }
@@ -1904,76 +2005,32 @@
         // Per-message medical disclaimer
         html += `<div class="msg-disclaimer">⚠️ 健康提示：以上内容仅为科普参考，不能替代专业医疗诊断与治疗。如有不适或症状持续，请及时到正规医院就诊。紧急情况请拨打 <strong>120</strong>。</div>`;
 
-        // Feedback + actions row
+        // Feedback + actions row — data-* + chatArea 事件委托, 无内联动态参数
         html += `<div class="feedback-row">
-            <button class="thumbs-up" onclick="submitFeedback(this, 'helpful')" title="有帮助" aria-label="有帮助">
+            <button class="thumbs-up" data-fb="helpful" title="有帮助" aria-label="有帮助">
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8.864.73a2.976 2.976 0 01.946 1.455l.186.76a3.674 3.674 0 001.057 1.77l.322.29a.75.75 0 01-.416 1.306l-2.138.33a2.268 2.268 0 00-1.458.882c-.35.488-.517 1.073-.43 1.64l.074.482c.142.914.216 1.84.221 2.767v.05A2.51 2.51 0 015.188 15a.944.944 0 01-.944-.938v-3.9a2.75 2.75 0 00-4.067.728.85.85 0 01-.177.23v-7.09a.65.65 0 01.17-.126 6.25 6.25 0 015.577-.652c.31.066.73.222 1.085.41.172.092.631.415 1.061.721.543.386 1.113.79 1.177.85z"/></svg>有帮助
             </button>
-            <button class="thumbs-down" onclick="submitFeedback(this, 'not_helpful')" title="无帮助" aria-label="无帮助">
+            <button class="thumbs-down" data-fb="not_helpful" title="无帮助" aria-label="无帮助">
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M7.136.73a2.976 2.976 0 00-.946 1.455l-.186.76a3.674 3.674 0 01-1.057 1.77l-.322.29a.75.75 0 00.416 1.306l2.138.33a2.268 2.268 0 011.458.882c.35.488.517 1.073.43 1.64l-.074.482c-.142.914-.216 1.84-.221 2.767v.05A2.51 2.51 0 0010.812 15a.944.944 0 00.944-.938v-3.9a2.75 2.75 0 014.067.728.85.85 0 00.177.23v-7.09a.65.65 0 00-.17-.126 6.25 6.25 0 00-5.577-.652c-.31.066-.73.222-1.085.41-.172.092-.631.415-1.061.721-.543.386-1.113.79-1.177.85z"/></svg>无帮助
             </button>
             <span style="flex:1;"></span>
-            <button class="retry-btn" onclick="retryLast()" title="重新生成" aria-label="重新生成">
+            <button class="retry-btn" data-retry="self" title="重新生成" aria-label="重新生成">
                 <svg viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M8 3a5 5 0 104.546 2.914.5.5 0 01.908-.417A6 6 0 118 2v1z"/><path d="M8 4.466V.534a.25.25 0 01.41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 018 4.466z"/></svg>重试
             </button>
-            <button onclick="copyAnswer(this)" title="复制答案" aria-label="复制答案">
+            <button data-action="copy" title="复制答案" aria-label="复制答案">
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"/></svg>复制
             </button>
         </div>`;
 
         bubble.innerHTML = html;
         enhanceCodeBlocks(bubble);
-        addPerMessageDisclaimer(botDiv); // already included inline
-        addRetryButton(botDiv); // already included inline
         scrollToBottom();
-    }
-
-    function addRetryButton(botDiv) {
-        // Already included in finalizeAnswer inline; only used as fallback
-        const bubble = botDiv.querySelector('.bubble');
-        if (!bubble.querySelector('.retry-btn')) {
-            const btn = document.createElement('button');
-            btn.className = 'retry-btn';
-            btn.onclick = retryLast;
-            btn.setAttribute('aria-label', '重新生成');
-            btn.innerHTML = `<svg viewBox="0 0 16 16" fill="currentColor" width="12"><path fill-rule="evenodd" d="M8 3a5 5 0 104.546 2.914.5.5 0 01.908-.417A6 6 0 118 2v1z"/><path d="M8 4.466V.534a.25.25 0 01.41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 018 4.466z"/></svg>重试`;
-            bubble.appendChild(btn);
-        }
-    }
-
-    function addPerMessageDisclaimer(botDiv) {
-        const bubble = botDiv.querySelector('.bubble');
-        if (!bubble.querySelector('.msg-disclaimer')) {
-            const disc = document.createElement('div');
-            disc.className = 'msg-disclaimer';
-            disc.innerHTML = '⚠️ 健康提示：以上内容仅为科普参考，不能替代专业医疗诊断与治疗。如有不适或症状持续，请及时到正规医院就诊。紧急情况请拨打 <strong>120</strong>。';
-            bubble.appendChild(disc);
-        }
-    }
-
-    function addRetrievalTag(botDiv) {
-        const bubble = botDiv.querySelector('.bubble');
-        const tag = document.createElement('div');
-        tag.className = 'retrieval-source-tag';
-        tag.innerHTML = '<span class="src-icon"></span>检索来源：' + (currentMode === 'rag' ? 'RAG 生成 · Qwen2.5' : '向量检索 · MacBERT');
-        bubble.appendChild(tag);
-    }
-
-    function addFeedbackButtons(botDiv) {
-        const bubble = botDiv.querySelector('.bubble');
-        const row = document.createElement('div');
-        row.className = 'feedback-row';
-        row.innerHTML = `
-            <button class="thumbs-up" onclick="submitFeedback(this, 'helpful')">有帮助</button>
-            <button class="thumbs-down" onclick="submitFeedback(this, 'not_helpful')">无帮助</button>
-            <span style="flex:1;"></span>
-            <button onclick="copyAnswer(this)">复制</button>`;
-        bubble.appendChild(row);
     }
 
     // ── UI helpers ───────────────────
     function removeEmptyState() {
-        const es = document.querySelector('.empty-state');
+        // 只清当前对话区的占位; 限定在 #chatArea, 避免误删历史消息里带 .empty-state 的克隆节点
+        const es = document.getElementById('chatArea').querySelector('.empty-state');
         if (es) es.remove();
     }
 
@@ -2094,7 +2151,9 @@
         const botDiv = btn.closest('.bot-msg');
         const prev = botDiv?.previousElementSibling;
         const question = prev?.querySelector('.bubble')?.textContent || '';
-        const answerText = currentAnswerText || bubble.textContent || '';
+        // 按条取该回答正文(而非全局 currentAnswerText), 保证对历史消息反馈也准确
+        const answerEl = bubble.querySelector('.answer-content');
+        const answerText = (answerEl ? answerEl.textContent : bubble.textContent) || '';
 
         try {
             await fetch('/api/feedback', {
@@ -2126,14 +2185,11 @@
     }
 
     // ── Escape helpers ──────────────
+    // 同时覆盖文本节点与 HTML 属性两种上下文(补充引号转义)
     function escHtml(text) {
         const d = document.createElement('div');
-        d.textContent = text;
-        return d.innerHTML;
-    }
-
-    function escAttr(text) {
-        return text.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'\\"');
+        d.textContent = text == null ? '' : String(text);
+        return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 </script>
 </body>
