@@ -294,7 +294,7 @@ async def ask_stream(req: AskRequest):
             return
 
         # RAG 流式生成
-        from prompts import build_rag_prompt
+        from prompts import build_rag_prompt, sanitize_answer, StreamEchoFilter
         prompt = build_rag_prompt(req.question, results, chat_history)
         full_text = ""
 
@@ -302,15 +302,20 @@ async def ask_stream(req: AskRequest):
             yield f"data: {json_module.dumps({'type': 'error', 'text': 'LLM 未加载'})}\n\n"
             return
 
+        echo_filter = StreamEchoFilter()
         try:
             for token in engine.llm.generate_stream(prompt):
                 full_text += token
-                yield f"data: {json_module.dumps({'type': 'token', 'text': token})}\n\n"
+                for safe in echo_filter.feed(token):
+                    yield f"data: {json_module.dumps({'type': 'token', 'text': safe})}\n\n"
+            for safe in echo_filter.flush():
+                yield f"data: {json_module.dumps({'type': 'token', 'text': safe})}\n\n"
         except Exception as e:
             logger.error(f"流式生成失败: {e}")
             yield f"data: {json_module.dumps({'type': 'error', 'text': str(e)})}\n\n"
 
-        yield f"data: {json_module.dumps({'type': 'done', 'answer': full_text, 'mode': 'rag', 'similarity': best['similarity'], 'knowledge_point': best['knowledge_point'], 'sources': [{'question': r['question'], 'knowledge_point': r['knowledge_point'], 'similarity': r['similarity']} for r in results], 'results': results}, ensure_ascii=False)}\n\n"
+        clean_answer = sanitize_answer(full_text)
+        yield f"data: {json_module.dumps({'type': 'done', 'answer': clean_answer, 'mode': 'rag', 'similarity': best['similarity'], 'knowledge_point': best['knowledge_point'], 'sources': [{'question': r['question'], 'knowledge_point': r['knowledge_point'], 'similarity': r['similarity']} for r in results], 'results': results}, ensure_ascii=False)}\n\n"
 
     response = StreamingResponse(generate(), media_type="text/event-stream")
     response.headers["X-Session-Id"] = session_id

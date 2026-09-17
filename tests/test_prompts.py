@@ -28,8 +28,10 @@ class TestRAGPrompt:
         prompt = build_rag_prompt("测试", docs)
         assert "医疗健康" in prompt or "科普" in prompt
 
-    def test_build_rag_prompt_includes_disclaimer(self):
-        """修复验证：DISCLAIMER_SUFFIX 现在实际附加到 prompt 中"""
+    def test_build_rag_prompt_has_emergency_rule(self):
+        """急症引导（含 120）保留在系统规则中；DISCLAIMER_SUFFIX 不再拼在
+        prompt 尾部 — 尾部固定文本最靠近生成触发点, 易被小模型复读,
+        且前端每条消息已渲染固定免责声明。"""
         docs = [
             {
                 "question": "感冒怎么办？",
@@ -39,7 +41,8 @@ class TestRAGPrompt:
             }
         ]
         prompt = build_rag_prompt("感冒怎么办？", docs)
-        assert "120" in prompt, "免责声明中应包含 120 急救提示"
+        assert "120" in prompt, "急症规则应包含 120 急救引导"
+        assert "健康提示：以上内容仅为科普参考" not in prompt
 
     def test_build_rag_prompt_with_multiple_docs(self):
         docs = [

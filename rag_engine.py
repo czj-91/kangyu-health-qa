@@ -11,7 +11,7 @@ from config import (
     init_env, EMBED_MODEL_NAME, FINE_TUNED_MODEL_DIR, TOP_K_RETRIEVAL,
     MAX_SEQ_LENGTH, RAG_MODE, ENABLE_QUERY_REWRITE,
 )
-from prompts import build_rag_prompt, QUERY_REWRITE_PROMPT
+from prompts import build_rag_prompt, QUERY_REWRITE_PROMPT, sanitize_answer
 from retriever.hybrid import HybridRetriever
 from logger_config import logger
 
@@ -198,7 +198,7 @@ class RAGEngine:
 
         prompt = build_rag_prompt(question, results, chat_history)
         try:
-            generated = self.llm.generate(prompt)
+            generated = sanitize_answer(self.llm.generate(prompt))
         except Exception as e:
             logger.error(f"LLM 生成失败: {e}")
             return {
