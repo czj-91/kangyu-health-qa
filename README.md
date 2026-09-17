@@ -78,7 +78,7 @@ flowchart LR
 ├── conversation.py        # 多轮对话会话管理（TTL + 线程锁）
 ├── feedback.py            # 用户反馈收集（JSONL）
 ├── prompts.py             # 健康助手提示词 + 医疗安全护栏
-├── train.py               # MacBERT 微调脚本（可选，提升检索效果）
+├── train.py               # 历史实验：早期 QACP 知识点问答的分类头微调脚本
 ├── build_kb.py            # 健康知识库构建脚本（生成向量与问答库）
 ├── retriever/             # 混合检索: 向量存储 / BM25 / RRF+Rerank
 ├── evaluation/            # RAGAS 端到端评估 + 检索质量评测
@@ -109,9 +109,9 @@ cp .env.example .env
 
 ```bash
 python build_kb.py
-# 可选：在健康数据集上微调 MacBERT 以提升检索（需要 GPU 更佳）
-# python train.py
 ```
+
+> 说明：线上检索使用基础 MacBERT（`hfl/chinese-macbert-base`）语义嵌入，知识库构建不依赖微调权重。仓库中的 `train.py` / `data_preprocess.py` 为项目早期版本（QACP 知识点问答）的分类头微调实验脚本，需自备 QACP 原始数据，与当前医疗健康知识库无关，仅作训练流程参考。
 
 生成产物位于 `model/health_macbert/`：`qa_library.json` 与 `qa_embeddings.npy`。
 
