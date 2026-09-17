@@ -1,0 +1,42 @@
+version: "3.9"
+
+services:
+  kangyu:
+    build: .
+    image: kangyu-rag:v2
+    container_name: kangyu-rag
+    ports:
+      - "${PORT:-5000}:5000"
+    environment:
+      - HF_ENDPOINT=${HF_ENDPOINT:-https://hf-mirror.com}
+      - RAG_MODE=${RAG_MODE:-auto}
+      - LLM_MODEL_NAME=${LLM_MODEL_NAME:-Qwen/Qwen2.5-1.5B-Instruct}
+      - LLM_MAX_NEW_TOKENS=${LLM_MAX_NEW_TOKENS:-512}
+      - LLM_TEMPERATURE=${LLM_TEMPERATURE:-0.3}
+      - TOP_K_RETRIEVAL=${TOP_K_RETRIEVAL:-3}
+      - ENABLE_RERANKER=${ENABLE_RERANKER:-true}
+      - ENABLE_QUERY_REWRITE=${ENABLE_QUERY_REWRITE:-true}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - hf_cache:/home/appuser/.cache/huggingface
+      - ./model/health_macbert:/app/model/health_macbert
+      - ./data:/app/data
+      - ./logs:/app/logs
+    # GPU: 取消下面注释 (需要 nvidia-container-toolkit)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+volumes:
+  hf_cache:

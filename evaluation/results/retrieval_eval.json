@@ -1,0 +1,57 @@
+{
+  "kb_size": 5915,
+  "sample": 200,
+  "seed": 42,
+  "embed_model": "chinese-macbert-base (CLS pooling)",
+  "reranker": "BAAI/bge-reranker-base",
+  "results": [
+    {
+      "mode": "full_q",
+      "config": "hybrid",
+      "n": 200,
+      "hit@1": 0.995,
+      "recall@5": 1.0,
+      "mrr@10": 0.9975
+    },
+    {
+      "mode": "full_q",
+      "config": "hybrid_rr",
+      "n": 200,
+      "hit@1": 0.995,
+      "recall@5": 1.0,
+      "mrr@10": 0.9975
+    },
+    {
+      "mode": "full_q",
+      "config": "semantic",
+      "n": 200,
+      "hit@1": 0.99,
+      "recall@5": 1.0,
+      "mrr@10": 0.9942
+    },
+    {
+      "mode": "partial_q",
+      "config": "hybrid",
+      "n": 200,
+      "hit@1": 0.37,
+      "recall@5": 0.97,
+      "mrr@10": 0.6454
+    },
+    {
+      "mode": "partial_q",
+      "config": "hybrid_rr",
+      "n": 200,
+      "hit@1": 0.955,
+      "recall@5": 0.97,
+      "mrr@10": 0.9625
+    },
+    {
+      "mode": "partial_q",
+      "config": "semantic",
+      "n": 200,
+      "hit@1": 0.22,
+      "recall@5": 0.335,
+      "mrr@10": 0.2704
+    }
+  ]
+}

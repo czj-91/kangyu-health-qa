@@ -1,0 +1,2140 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>康语 · 医疗健康知识问答</title>
+
+    <!--
+      Google Fonts 在中国大陆不可用，改用系统字体栈。
+      原设计字体: Inter (UI) + JetBrains Mono (Code)
+    -->
+
+    <!-- Highlight.js Night Owl theme (customized via CSS overrides) -->
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/highlight.js/11.9.0/styles/night-owl.min.css">
+    <script src="https://cdn.bootcdn.net/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/marked/12.0.1/marked.min.js"></script>
+
+    <style>
+        /* ═══════════════════════════════════════════════════════════════
+           CSS VARIABLES — 统一色彩·圆角·阴影·动效系统
+           ═══════════════════════════════════════════════════════════ */
+
+        :root {
+            /* ── 深色主题 (默认) ── */
+            --page-bg: #0f131c;
+            --sidebar-bg: #121620;
+            --card-bg: #171c29;
+            --surface-bg: #1e2433;
+            --input-bg: #1a1f2e;
+
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+
+            --border-subtle: rgba(255,255,255,0.06);
+            --border-default: rgba(255,255,255,0.08);
+            --border-hover: rgba(255,255,255,0.12);
+
+            --gradient-blue: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+            --gradient-blue-hover: linear-gradient(135deg, #14b8a6 0%, #2dd4bf 100%);
+            --blue-500: #0d9488;
+            --blue-400: #14b8a6;
+            --indigo-500: #0f766e;
+
+            --success: #34d399;
+            --warning: #f59e0b;
+            --danger: #f87171;
+
+            /* Code highlight overrides (Night Owl base) */
+            --code-string: #fb923c;
+            --code-function: #22d3ee;
+            --code-comment: #34d399;
+            --code-keyword: #c084fc;
+            --code-number: #fbbf24;
+            --code-builtin: #38bdf8;
+
+            /* ── 圆角系统 ── */
+            --radius-xl: 20px;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --radius-xs: 6px;
+
+            /* ── 阴影系统 ── */
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.2);
+            --shadow-md: 0 4px 20px rgba(13,148,136,0.06);
+            --shadow-lg: 0 8px 32px rgba(13,148,136,0.08);
+            --shadow-input: 0 4px 24px rgba(13,148,136,0.10);
+            --shadow-card-hover: 0 8px 28px rgba(13,148,136,0.10);
+
+            /* ── 过渡 ── */
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+            /* ── 字体 ── */
+            --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+            --font-code: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Consolas', 'Microsoft YaHei', monospace;
+        }
+
+        /* ── 亮色主题 ── */
+        [data-theme="light"] {
+            --page-bg: #f1f5f9;
+            --sidebar-bg: #f8fafc;
+            --card-bg: #ffffff;
+            --surface-bg: #f8fafc;
+            --input-bg: #ffffff;
+
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+
+            --border-subtle: rgba(0,0,0,0.04);
+            --border-default: rgba(0,0,0,0.08);
+            --border-hover: rgba(0,0,0,0.12);
+
+            --shadow-sm: 0 1px 4px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 16px rgba(13,148,136,0.06);
+            --shadow-lg: 0 8px 28px rgba(13,148,136,0.08);
+            --shadow-input: 0 4px 20px rgba(13,148,136,0.08);
+            --shadow-card-hover: 0 8px 24px rgba(13,148,136,0.10);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           RESET & BASE
+           ═══════════════════════════════════════════════════════════ */
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-ui);
+            background: var(--page-bg);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            font-size: 14px;
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ── Custom Scrollbar ── */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.10);
+            border-radius: 2px;
+        }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
+
+        [data-theme="light"] ::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.12);
+        }
+        [data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0,0,0,0.20);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           SIDEBAR — 左侧边栏
+           ═══════════════════════════════════════════════════════════ */
+
+        .sidebar {
+            width: 280px;
+            min-width: 280px;
+            background: var(--sidebar-bg);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            border-right: 1px solid var(--border-subtle);
+        }
+
+        /* 品牌区域 */
+        .sidebar-brand {
+            padding: 20px 20px 16px;
+        }
+        .sidebar-brand .brand-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+        .sidebar-brand .brand-logo {
+            width: 34px;
+            height: 34px;
+            border-radius: var(--radius-sm);
+            background: var(--gradient-blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #fff;
+            flex-shrink: 0;
+            box-shadow: 0 2px 12px rgba(13,148,136,0.25);
+        }
+        .sidebar-brand .brand-title {
+            font-size: 16px;
+            font-weight: 700;
+            background: var(--gradient-blue);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.01em;
+            line-height: 1.2;
+        }
+        .sidebar-brand .brand-ver {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-left: 44px;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+        }
+
+        /* 功能卡片 */
+        .sidebar-actions-card {
+            margin: 0 12px 12px;
+            padding: 8px;
+            background: var(--surface-bg);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-subtle);
+        }
+        .sidebar-actions-card button {
+            width: 100%;
+            padding: 9px 14px;
+            border: none;
+            border-radius: var(--radius-sm);
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all var(--transition);
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--font-ui);
+            font-weight: 500;
+        }
+        .sidebar-actions-card button:hover {
+            background: rgba(13,148,136,0.08);
+            color: var(--text-primary);
+            transform: translateY(-1px);
+        }
+        .sidebar-actions-card button svg {
+            flex-shrink: 0;
+            opacity: 0.7;
+        }
+        .sidebar-actions-card button:hover svg { opacity: 1; }
+
+        /* 对话列表 */
+        .conv-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 12px 8px;
+        }
+        .conv-list-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 8px 12px 6px;
+            font-weight: 600;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .conv-list-count { font-size: 10px; font-weight: 400; opacity: 0.7; }
+        .conv-item {
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 13px;
+            transition: all var(--transition);
+            margin-bottom: 2px;
+            color: var(--text-secondary);
+            position: relative;
+            border: 1px solid transparent;
+            font-weight: 500;
+        }
+        .conv-item:hover {
+            background: var(--surface-bg);
+            color: var(--text-primary);
+            border-color: var(--border-default);
+        }
+        .conv-item:hover .conv-del { opacity: 1; }
+        .conv-item.active {
+            color: var(--text-primary);
+            background: rgba(13,148,136,0.06);
+            border: 1px solid var(--border-default);
+            border-left: 3px solid var(--blue-500);
+            padding-left: 10px;
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+        }
+        .conv-item .conv-dot {
+            display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+            background: var(--blue-400); margin-right: 8px; flex-shrink: 0;
+        }
+        .conv-item .conv-info { overflow: hidden; flex: 1; }
+        .conv-item .conv-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+        .conv-item .conv-time { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+        .conv-del {
+            opacity: 0; font-size: 14px; color: var(--text-muted); padding: 2px 4px;
+            border-radius: 4px; transition: all var(--transition); flex-shrink: 0; border: none; background: none; cursor: pointer;
+        }
+        .conv-del:hover { color: var(--danger); background: rgba(248,113,113,0.1); }
+            flex-shrink: 0;
+        }
+
+        /* 侧边栏底部统计 */
+        .sidebar-footer {
+            padding: 10px 16px;
+            border-top: 1px solid var(--border-subtle);
+            font-size: 11px;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-weight: 500;
+        }
+        .sidebar-footer .stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sidebar-footer .stat span:last-child {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .sidebar-footer .stat-dot {
+            display: inline-block;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--success);
+            margin-right: 5px;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           MAIN AREA
+           ═══════════════════════════════════════════════════════════════ */
+
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            min-width: 0;
+            background: var(--page-bg);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           TOP BAR — 顶部工具栏
+           ═══════════════════════════════════════════════════════════════ */
+
+        .topbar {
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+            background: var(--page-bg);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .logo-sm {
+            display: none;
+            font-weight: 700;
+            font-size: 15px;
+            background: var(--gradient-blue);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* 模式切换胶囊 */
+        .mode-pill {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            border: 1px solid transparent;
+            user-select: none;
+            font-family: var(--font-ui);
+            letter-spacing: 0.01em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .mode-pill::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .mode-pill.rag {
+            background: rgba(52,211,153,0.10);
+            color: var(--success);
+            border-color: rgba(52,211,153,0.2);
+        }
+        .mode-pill.rag::before { background: var(--success); }
+        .mode-pill.retrieval {
+            background: rgba(245,158,11,0.10);
+            color: var(--warning);
+            border-color: rgba(245,158,11,0.2);
+        }
+        .mode-pill.retrieval::before { background: var(--warning); }
+        .mode-pill:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .topbar .spacer { flex: 1; }
+
+        /* 胶囊按钮组 */
+        .top-btn {
+            padding: 7px 16px;
+            border: 1px solid var(--border-default);
+            border-radius: 20px;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all var(--transition);
+            font-family: var(--font-ui);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .top-btn:hover {
+            background: rgba(13,148,136,0.08);
+            border-color: rgba(13,148,136,0.3);
+            color: var(--blue-400);
+            transform: translateY(-1px);
+        }
+        .top-btn.danger:hover {
+            background: rgba(248,113,113,0.08);
+            border-color: rgba(248,113,113,0.3);
+            color: var(--danger);
+        }
+
+        /* 主题切换按钮 */
+        .theme-toggle {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 1px solid var(--border-default);
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .theme-toggle:hover {
+            border-color: var(--border-hover);
+            color: var(--text-primary);
+            background: var(--surface-bg);
+            transform: rotate(15deg);
+        }
+
+        /* Top-K 滑块 */
+        .top-k-slider {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .top-k-slider input[type=range] {
+            -webkit-appearance: none;
+            width: 70px;
+            height: 4px;
+            border-radius: 2px;
+            background: linear-gradient(90deg, var(--blue-500), var(--indigo-500));
+            outline: none;
+            cursor: pointer;
+        }
+        .top-k-slider input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--blue-400);
+            cursor: pointer;
+            border: 2px solid var(--page-bg);
+            box-shadow: 0 0 8px rgba(13,148,136,0.3);
+            transition: all var(--transition);
+        }
+        .top-k-slider input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            box-shadow: 0 0 14px rgba(13,148,136,0.5);
+        }
+        .top-k-val {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: rgba(13,148,136,0.12);
+            color: var(--blue-400);
+            font-weight: 700;
+            font-size: 11px;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           CHAT AREA — 对话主区域
+           ═══════════════════════════════════════════════════════════════ */
+
+        .chat-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 24px 8px;
+            scroll-behavior: smooth;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 40px;
+        }
+        .empty-state .icon {
+            width: 64px;
+            height: 64px;
+            border-radius: var(--radius-lg);
+            background: var(--gradient-blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #fff;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(13,148,136,0.15);
+        }
+        .empty-state h2 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+        }
+        .empty-state p {
+            font-size: 13px;
+            max-width: 400px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* 消息入场动画 */
+        .chat-message {
+            margin-bottom: 20px;
+            animation: msgIn 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @keyframes msgIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── 用户消息 (右侧) ── */
+        .user-msg {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+        .user-msg .bubble {
+            background: var(--gradient-blue);
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: var(--radius-xl) var(--radius-sm) var(--radius-xl) var(--radius-xl);
+            max-width: 70%;
+            font-size: 14px;
+            line-height: 1.6;
+            word-wrap: break-word;
+            box-shadow: 0 4px 16px rgba(13,148,136,0.2);
+            font-weight: 500;
+        }
+
+        /* ── AI消息 (左侧) ── */
+        .bot-msg {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding: 0 12%;
+        }
+        .bot-msg .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            background: var(--gradient-blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            flex-shrink: 0;
+            color: #fff;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            box-shadow: 0 2px 8px rgba(13,148,136,0.2);
+        }
+        .bot-msg .msg-wrap {
+            flex: 1;
+            min-width: 0;
+        }
+        .bot-msg .bubble {
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 40px),
+                var(--card-bg);
+            border: 1px solid var(--border-subtle);
+            padding: 16px 20px;
+            border-radius: var(--radius-lg);
+            font-size: 14px;
+            line-height: 1.7;
+            box-shadow: var(--shadow-sm);
+            transition: all var(--transition);
+        }
+        .bot-msg .bubble.streaming {
+            border-color: rgba(13,148,136,0.2);
+            box-shadow: 0 0 24px rgba(13,148,136,0.04);
+        }
+        .bot-msg .bubble:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+
+        /* 检索来源标签 */
+        .retrieval-source-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 12px;
+            padding: 5px 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
+            cursor: default;
+        }
+        .retrieval-source-tag .src-icon {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--success);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           MARKDOWN CONTENT STYLES (inside .bubble)
+           ═══════════════════════════════════════════════════════════════ */
+
+        .bubble h1, .bubble h2, .bubble h3 {
+            margin: 18px 0 10px;
+            font-size: 1.05em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .bubble h2::before {
+            content: '';
+            display: inline-block;
+            width: 3px;
+            height: 1em;
+            background: var(--gradient-blue);
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+        .bubble h3::before {
+            content: '';
+            display: inline-block;
+            width: 3px;
+            height: 1em;
+            background: linear-gradient(180deg, var(--blue-500), var(--indigo-500));
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+        .bubble h1:first-child,
+        .bubble h2:first-child,
+        .bubble h3:first-child { margin-top: 0; }
+
+        .bubble p { margin-bottom: 8px; }
+        .bubble p:last-child { margin-bottom: 0; }
+
+        .bubble ul, .bubble ol { margin: 6px 0; padding-left: 20px; }
+        .bubble li { margin-bottom: 3px; }
+
+        .bubble blockquote {
+            border-left: 3px solid var(--blue-500);
+            padding-left: 14px;
+            color: var(--text-secondary);
+            margin: 10px 0;
+            font-style: italic;
+        }
+
+        .bubble table {
+            border-collapse: collapse;
+            margin: 10px 0;
+            width: 100%;
+            font-size: 13px;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+        }
+        .bubble th, .bubble td {
+            border: 1px solid var(--border-subtle);
+            padding: 8px 12px;
+            text-align: left;
+        }
+        .bubble th {
+            background: rgba(13,148,136,0.06);
+            font-weight: 600;
+        }
+
+        /* 内联代码 */
+        .bubble :not(pre) > code {
+            background: rgba(13,148,136,0.10);
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-family: var(--font-code);
+            font-size: 0.9em;
+            color: var(--blue-400);
+            font-weight: 500;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           CODE BLOCK — 代码块重度美化
+           ═══════════════════════════════════════════════════════════════ */
+
+        .bubble pre {
+            background: #0a0f18;
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-md);
+            margin: 12px 0;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(13,148,136,0.04);
+            transition: all var(--transition);
+        }
+        .bubble pre:hover {
+            box-shadow: 0 0 28px rgba(13,148,136,0.08);
+            transform: translateY(-1px);
+            border-color: rgba(13,148,136,0.15);
+        }
+
+        /* 代码工具条 */
+        .code-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 14px;
+            background: rgba(255,255,255,0.03);
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 11px;
+            user-select: none;
+        }
+        .code-toolbar .lang-tag {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-family: var(--font-ui);
+        }
+        .code-toolbar .lang-tag::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--blue-400);
+            display: inline-block;
+        }
+        .code-toolbar .tb-actions {
+            display: flex;
+            gap: 4px;
+        }
+        .code-toolbar .tb-btn {
+            padding: 4px 10px;
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            color: var(--text-muted);
+            font-size: 11px;
+            cursor: pointer;
+            transition: all var(--transition);
+            font-family: var(--font-ui);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .code-toolbar .tb-btn:hover {
+            background: rgba(255,255,255,0.05);
+            color: var(--text-secondary);
+            border-color: var(--border-hover);
+        }
+        .code-toolbar .tb-btn.copied {
+            border-color: var(--success);
+            color: var(--success);
+        }
+
+        /* 代码内容区 */
+        .bubble pre code {
+            font-family: var(--font-code);
+            font-size: 13px;
+            line-height: 1.5;
+            display: block;
+            padding: 16px;
+            overflow-x: auto;
+            background: transparent;
+            tab-size: 4;
+            -moz-tab-size: 4;
+        }
+
+        /* Night Owl 覆盖 — 确保使用自定义配色 */
+        .bubble pre code .hljs-string  { color: var(--code-string) !important; }
+        .bubble pre code .hljs-title,
+        .bubble pre code .hljs-function,
+        .bubble pre code .hljs-title.function_ { color: var(--code-function) !important; }
+        .bubble pre code .hljs-comment { color: var(--code-comment) !important; font-style: italic; }
+        .bubble pre code .hljs-keyword { color: var(--code-keyword) !important; }
+        .bubble pre code .hljs-number  { color: var(--code-number) !important; }
+        .bubble pre code .hljs-built_in { color: var(--code-builtin) !important; }
+
+        /* Light-theme code tweaks */
+        [data-theme="light"] .bubble pre {
+            background: #f1f5f9;
+            border-color: rgba(0,0,0,0.06);
+        }
+        [data-theme="light"] .bubble pre:hover {
+            box-shadow: 0 0 20px rgba(13,148,136,0.06);
+        }
+        [data-theme="light"] .code-toolbar {
+            background: rgba(0,0,0,0.02);
+            border-bottom-color: rgba(0,0,0,0.05);
+        }
+
+        /* ── Meta / Score / Sources ── */
+        .meta-section { margin-top: 12px; }
+        .score-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .score-bar .track {
+            flex: 1;
+            height: 4px;
+            background: var(--border-subtle);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .score-bar .fill {
+            height: 100%;
+            background: var(--gradient-blue);
+            border-radius: 2px;
+            transition: width 0.8s ease;
+        }
+
+        .source-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        .source-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            background: rgba(13,148,136,0.06);
+            border: 1px solid rgba(13,148,136,0.12);
+            border-radius: 16px;
+            font-size: 11px;
+            cursor: pointer;
+            color: var(--blue-400);
+            transition: all var(--transition);
+            font-weight: 500;
+            font-family: var(--font-ui);
+        }
+        .source-chip:hover {
+            background: rgba(13,148,136,0.12);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Feedback row */
+        .feedback-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-subtle);
+        }
+        .feedback-row button {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 14px;
+            border: 1px solid var(--border-default);
+            border-radius: 16px;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all var(--transition);
+            font-family: var(--font-ui);
+            font-weight: 500;
+        }
+        .feedback-row button:hover {
+            border-color: var(--border-hover);
+            color: var(--text-primary);
+            transform: translateY(-1px);
+            background: var(--surface-bg);
+        }
+        .feedback-row button.thumbs-up:hover {
+            border-color: var(--success);
+            color: var(--success);
+            background: rgba(52,211,153,0.08);
+        }
+        .feedback-row button.thumbs-down:hover {
+            border-color: var(--danger);
+            color: var(--danger);
+            background: rgba(248,113,113,0.08);
+        }
+        .feedback-row button.voted {
+            border-color: var(--success);
+            color: var(--success);
+            background: rgba(52,211,153,0.10);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           INPUT BAR — 底部输入区域
+           ═══════════════════════════════════════════════════════════════ */
+
+        .input-bar {
+            padding: 0 24px 20px;
+            flex-shrink: 0;
+        }
+        .input-panel {
+            background: var(--surface-bg);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-xl);
+            padding: 14px 18px;
+            box-shadow: var(--shadow-input);
+            transition: all var(--transition);
+        }
+        .input-panel:focus-within {
+            border-color: rgba(13,148,136,0.25);
+            box-shadow: 0 4px 28px rgba(13,148,136,0.14);
+        }
+
+        .input-wrap {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .input-wrap .search-icon {
+            color: var(--text-muted);
+            flex-shrink: 0;
+            opacity: 0.6;
+        }
+        .input-wrap input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 14px;
+            outline: none;
+            padding: 6px 0;
+            font-family: var(--font-ui);
+            font-weight: 500;
+        }
+        .input-wrap input::placeholder {
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+        .input-wrap .send-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 50%;
+            background: var(--gradient-blue);
+            color: #fff;
+            cursor: pointer;
+            transition: all var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 2px 12px rgba(13,148,136,0.25);
+        }
+        .input-wrap .send-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 4px 20px rgba(13,148,136,0.35);
+        }
+        .input-wrap .send-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .quick-asks {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-subtle);
+        }
+        .quick-chip {
+            padding: 5px 14px;
+            background: transparent;
+            border: 1px solid var(--border-default);
+            border-radius: 16px;
+            font-size: 12px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all var(--transition);
+            white-space: nowrap;
+            font-family: var(--font-ui);
+            font-weight: 500;
+        }
+        .quick-chip:hover {
+            border-color: rgba(13,148,136,0.3);
+            color: var(--blue-400);
+            background: rgba(13,148,136,0.06);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           TOAST
+           ═══════════════════════════════════════════════════════════════ */
+
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+        .toast {
+            padding: 10px 18px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            color: #fff;
+            background: var(--surface-bg);
+            border: 1px solid var(--border-default);
+            box-shadow: var(--shadow-lg);
+            animation: toastIn 0.3s ease, toastOut 0.3s ease 2.2s forwards;
+            font-family: var(--font-ui);
+            font-weight: 500;
+            pointer-events: auto;
+            backdrop-filter: blur(8px);
+        }
+        .toast.success {
+            border-color: rgba(52,211,153,0.3);
+            background: rgba(52,211,153,0.10);
+            color: var(--success);
+        }
+        .toast.error {
+            border-color: rgba(248,113,113,0.3);
+            background: rgba(248,113,113,0.10);
+            color: var(--danger);
+        }
+        @keyframes toastIn  { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes toastOut { from { opacity: 1; transform: translateX(0); }  to { opacity: 0; transform: translateY(-10px); } }
+
+        /* ═══════════════════════════════════════════════════════════════
+           TYPING CURSOR & LOADING
+           ═══════════════════════════════════════════════════════════════ */
+
+        .typing-cursor::after {
+            content: ' ▌';
+            animation: blink 0.9s infinite;
+            color: var(--blue-400);
+        }
+        @keyframes blink { 0%,50% { opacity: 1; } 51%,100% { opacity: 0; } }
+
+        .loading-dots {
+            display: flex;
+            gap: 5px;
+            padding: 8px 0;
+        }
+        .loading-dots span {
+            width: 6px; height: 6px;
+            background: var(--blue-400);
+            border-radius: 50%;
+            animation: bounce 1.2s infinite;
+            opacity: 0.6;
+        }
+        .loading-dots span:nth-child(2) { animation-delay: 0.15s; }
+        .loading-dots span:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes bounce {
+            0%,80%,100% { transform: scale(0.6); opacity: 0.3; }
+            40%          { transform: scale(1);   opacity: 0.9; }
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           RESPONSIVE
+           ═══════════════════════════════════════════════════════════════ */
+
+        /* ── 医疗免责横幅 ── */
+        .disclaimer-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: rgba(13,148,136,0.08);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .disclaimer-bar svg { flex-shrink: 0; color: var(--warning); }
+        .disclaimer-bar strong { color: var(--blue-400); font-weight: 700; }
+
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .sidebar.open { display: flex; position: fixed; z-index: 100; top: 0; left: 0; bottom: 0; box-shadow: var(--shadow-lg); }
+            .sidebar-overlay { display: none; }
+            .sidebar-overlay.active { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99; }
+            .topbar { padding: 8px 12px; }
+            .logo-sm { display: block; margin-right: auto; }
+            .hamburger-btn { display: flex; }
+            .chat-area { padding: 12px 10px 4px; }
+            .bot-msg { padding: 0 4%; }
+            .bot-msg .bubble { padding: 12px 14px; font-size: 13px; }
+            .user-msg .bubble { max-width: 88%; font-size: 13px; }
+            .input-bar { padding: 0 10px 14px; }
+            .top-k-slider { display: none; }
+            .source-chips { gap: 4px; }
+            .topbar .spacer { display: none; }
+        }
+
+        /* ── 新增组件样式 ── */
+
+        /* 汉堡菜单按钮 */
+        .hamburger-btn {
+            display: none; width: 34px; height: 34px; align-items: center; justify-content: center;
+            border-radius: var(--radius-sm); background: none; border: 1px solid var(--border-default);
+            color: var(--text-secondary); cursor: pointer; flex-shrink: 0;
+            transition: all var(--transition);
+        }
+        .hamburger-btn:hover { border-color: var(--border-hover); color: var(--text-primary); }
+        .hamburger-btn svg { width: 18px; height: 18px; }
+
+        /* 滚动到底部按钮 */
+        .scroll-bottom-btn {
+            position: fixed; bottom: 100px; right: 24px; z-index: 50;
+            width: 38px; height: 38px; border-radius: 50%; background: var(--card-bg);
+            border: 1px solid var(--border-default); color: var(--text-secondary);
+            cursor: pointer; display: none; align-items: center; justify-content: center;
+            box-shadow: var(--shadow-md); transition: all var(--transition);
+        }
+        .scroll-bottom-btn:hover { border-color: var(--blue-500); color: var(--blue-500); transform: translateY(-2px); }
+        .scroll-bottom-btn.visible { display: flex; }
+
+        /* 停止生成按钮 */
+        .stop-btn {
+            display: none; align-items: center; gap: 6px; padding: 8px 16px;
+            background: var(--card-bg); border: 1px solid var(--danger); border-radius: 20px;
+            color: var(--danger); font-size: 12px; font-weight: 600; cursor: pointer;
+            transition: all var(--transition); margin: 0 auto 8px;
+        }
+        .stop-btn.visible { display: inline-flex; }
+        .stop-btn:hover { background: var(--danger); color: #fff; }
+        .stop-btn .stop-icon { width: 14px; height: 14px; border-radius: 2px; background: currentColor; }
+
+        /* 重试按钮 */
+        .retry-btn {
+            display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px;
+            background: none; border: 1px solid var(--border-default); border-radius: 16px;
+            color: var(--text-secondary); font-size: 11px; cursor: pointer;
+            transition: all var(--transition); margin-top: 8px;
+        }
+        .retry-btn:hover { border-color: var(--blue-500); color: var(--blue-500); background: var(--surface-bg); }
+        .retry-btn svg { width: 12px; height: 12px; }
+
+        /* 每条消息的免责声明 */
+        .msg-disclaimer {
+            margin-top: 10px; padding: 6px 10px; font-size: 11px; color: var(--text-muted);
+            background: rgba(245,158,11,0.06); border-left: 2px solid var(--warning);
+            border-radius: 0 var(--radius-xs) var(--radius-xs) 0; line-height: 1.5;
+        }
+
+        /* RAG 进度指示器 */
+        .rag-progress {
+            display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted);
+            padding: 8px 0; opacity: 0; transition: opacity 0.3s;
+        }
+        .rag-progress.visible { opacity: 1; }
+        .rag-progress .step { display: flex; align-items: center; gap: 4px; }
+        .rag-progress .step.active { color: var(--blue-400); }
+        .rag-progress .step.done { color: var(--success); }
+        .rag-progress .step-arrow { color: var(--text-muted); margin: 0 4px; }
+
+        /* Textarea 输入框 */
+        .input-bar textarea {
+            flex: 1; resize: none; border: none; outline: none;
+            background: transparent; color: var(--text-primary); font-family: var(--font-ui);
+            font-size: 14px; padding: 10px 4px; line-height: 1.5; min-height: 24px;
+            max-height: 120px; overflow-y: auto;
+        }
+        .input-bar textarea::placeholder { color: var(--text-muted); }
+
+        /* 焦点可见样式 */
+        :focus-visible {
+            outline: 2px solid var(--blue-400); outline-offset: 2px; border-radius: var(--radius-xs);
+        }
+        button:focus-visible, a:focus-visible { outline: 2px solid var(--blue-400); }
+
+        /* 减少动画支持 */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+        }
+
+        /* 系统主题自动检测 (无 localStorage 时) */
+        @media (prefers-color-scheme: light) {
+            html:not([data-theme]) {
+                --page-bg: #f1f5f9; --sidebar-bg: #f8fafc; --card-bg: #ffffff;
+                --surface-bg: #f8fafc; --input-bg: #ffffff;
+                --text-primary: #1e293b; --text-secondary: #64748b; --text-muted: #94a3b8;
+                --border-subtle: rgba(0,0,0,0.04); --border-default: rgba(0,0,0,0.08); --border-hover: rgba(0,0,0,0.12);
+                --shadow-sm: 0 1px 4px rgba(0,0,0,0.06); --shadow-md: 0 4px 16px rgba(13,148,136,0.06);
+                --shadow-lg: 0 8px 28px rgba(13,148,136,0.08); --shadow-input: 0 4px 20px rgba(13,148,136,0.08);
+                --shadow-card-hover: 0 8px 24px rgba(13,148,136,0.10);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════ SIDEBAR ══════════════════════════════════ -->
+<aside class="sidebar" role="complementary" aria-label="侧边栏">
+    <!-- 品牌区域 -->
+    <div class="sidebar-brand">
+        <div class="brand-row">
+                    <div class="brand-logo">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1.2" stroke-linejoin="round">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+        </div>
+        <span class="brand-title">康语 · 健康问答</span>
+        </div>
+        <div class="brand-ver">康语 v2 · 健康科普助手</div>
+    </div>
+
+    <!-- 功能卡片 -->
+    <div class="sidebar-actions-card">
+        <button onclick="newSession()" title="新建对话">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2a.75.75 0 01.75.75v4.5h4.5a.75.75 0 010 1.5h-4.5v4.5a.75.75 0 01-1.5 0v-4.5h-4.5a.75.75 0 010-1.5h4.5v-4.5A.75.75 0 018 2z"/></svg>
+            新对话
+        </button>
+        <button onclick="clearChat()" title="清空当前聊天">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2.75 3.5a.75.75 0 000 1.5h.5l.93 8.35A2 2 0 006.14 15h3.72a2 2 0 001.96-1.65l.93-8.35h.5a.75.75 0 000-1.5h-2.03a2.75 2.75 0 00-5.44 0H2.75zM5.78 5h4.44l-.87 7.83a.5.5 0 01-.49.42H7.14a.5.5 0 01-.49-.42L5.78 5z"/></svg>
+            清屏
+        </button>
+    </div>
+
+    <!-- 对话列表 -->
+    <div class="conv-list-label">历史对话</div>
+    <div class="conv-list" id="convList">
+        <div class="conv-item active" data-sid="" onclick="switchConversation('')">
+            <span class="conv-dot"></span><span class="conv-title">当前对话</span>
+        </div>
+    </div>
+
+    <!-- 底部统计 -->
+    <div class="sidebar-footer" id="sideStatus">
+        <div class="stat"><span><span class="stat-dot"></span>后端</span><span id="sideBackend">...</span></div>
+        <div class="stat"><span>设备</span><span id="sideDevice">检测中...</span></div>
+        <div class="stat"><span>问答库</span><span id="sideQaCount">...</span></div>
+        <div class="stat"><span>模式</span><span id="sideMode">...</span></div>
+    </div>
+</aside>
+
+<!-- ══════════════════════════════════ MAIN ══════════════════════════════════ -->
+<main class="main" role="main">
+    <!-- 顶部工具栏 -->
+    <div class="topbar">
+        <button class="hamburger-btn" onclick="toggleSidebar()" aria-label="打开菜单" title="菜单">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <span class="logo-sm">康语 · 健康问答</span>
+        <div class="mode-pill rag" id="modePill" onclick="toggleMode()" title="点击切换模式">RAG 生成</div>
+        <div class="spacer"></div>
+        <div class="top-k-slider" title="检索数量">
+            <span>Top-K</span>
+            <input type="range" id="topKSlider" min="1" max="10" value="3" oninput="document.getElementById('topKVal').textContent=this.value">
+            <span class="top-k-val" id="topKVal">3</span>
+        </div>
+        <button class="top-btn" onclick="newSession()">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2a.75.75 0 01.75.75v4.5h4.5a.75.75 0 010 1.5h-4.5v4.5a.75.75 0 01-1.5 0v-4.5h-4.5a.75.75 0 010-1.5h4.5v-4.5A.75.75 0 018 2z"/></svg>
+            新对话
+        </button>
+        <button class="top-btn danger" onclick="clearChat()">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2.75 3.5a.75.75 0 000 1.5h.5l.93 8.35A2 2 0 006.14 15h3.72a2 2 0 001.96-1.65l.93-8.35h.5a.75.75 0 000-1.5h-2.03a2.75 2.75 0 00-5.44 0H2.75zM5.78 5h4.44l-.87 7.83a.5.5 0 01-.49.42H7.14a.5.5 0 01-.49-.42L5.78 5z"/></svg>
+            清屏
+        </button>
+        <button class="theme-toggle" onclick="toggleTheme()" title="切换明暗主题" id="themeToggle">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" id="themeIconSun"><path d="M8 1a.5.5 0 01.5.5v1a.5.5 0 01-1 0v-1A.5.5 0 018 1zm0 10a3 3 0 100-6 3 3 0 000 6zm6.5-2.5a.5.5 0 010 1h-1a.5.5 0 010-1h1zM8 13a.5.5 0 01.5.5v1a.5.5 0 01-1 0v-1A.5.5 0 018 13zm-6.5-4.5a.5.5 0 010 1h-1a.5.5 0 010-1h1zm.646-5.854a.5.5 0 01.708 0l.707.707a.5.5 0 01-.708.708l-.707-.707a.5.5 0 010-.708zm9 9a.5.5 0 01.708 0l.707.707a.5.5 0 01-.708.708l-.707-.707a.5.5 0 010-.708zM2.646 11.854a.5.5 0 010-.708l.707-.707a.5.5 0 01.708.708l-.707.707a.5.5 0 01-.708 0zm9-9a.5.5 0 010-.708l.707-.707a.5.5 0 01.708.708l-.707.707a.5.5 0 01-.708 0z"/></svg>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" id="themeIconMoon" style="display:none;"><path d="M6 .278a.768.768 0 01.08.858 7.208 7.208 0 00-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 01.81.316.733.733 0 01-.031.893A8.349 8.349 0 018.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 016 .278zM4.858 1.311A7.269 7.269 0 001.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.318 7.318 0 005.532-2.299 8.38 8.38 0 01-1.82.18c-4.346 0-7.867-3.488-7.867-7.795 0-1.36.37-2.622 1.007-3.718-.46.106-.905.246-1.338.418z"/></svg>
+        </button>
+    </div>
+
+    <!-- 医疗免责横幅 -->
+    <div class="disclaimer-bar">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+        <span>健康科普仅供参考，不能替代执业医师的诊断与治疗；如遇急症，请立即拨打 <strong>120</strong> 急救。</span>
+    </div>
+
+    <!-- 对话区域 -->
+    <div class="chat-area" id="chatArea" role="log" aria-live="polite" aria-label="对话区域">
+        <div class="empty-state">
+            <div class="icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"/>
+                    <line x1="12" y1="8" x2="12" y2="16"/>
+                    <line x1="8" y1="12" x2="16" y2="12"/>
+                </svg>
+            </div>
+            <h2>康语 · 健康问答助手</h2>
+            <p>基于 MacBERT + ChromaDB + BM25 + BGE Reranker + Qwen2.5 的 RAG 检索增强生成系统。覆盖日常养生与基础医学科普，输入健康相关问题，获得通俗易懂的知识解答。</p>
+        </div>
+    </div>
+
+    <!-- 底部输入区 -->
+    <div class="input-bar">
+        <div class="input-panel">
+            <div class="input-wrap">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M11.742 10.344a6.5 6.5 0 10-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 001.415-1.414l-3.85-3.85a1.007 1.007 0 00-.115-.1zM12 6.5a5.5 5.5 0 11-11 0 5.5 5.5 0 0111 0z"/></svg>
+                <textarea id="questionInput"
+                       placeholder="输入健康 / 养生问题，Enter 发送，Shift+Enter 换行..."
+                       rows="1" autocomplete="off" autofocus></textarea>
+                <button class="send-btn" id="sendBtn" onclick="askQuestion()" title="发送 (Enter)" aria-label="发送消息">
+                    <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M15.854.146a.5.5 0 01.11.54l-5.819 14.547a.75.75 0 01-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 01.124-1.33L15.314.037a.5.5 0 01.54.11zM6.636 10.07l2.761 4.338L14.13 2.576 6.636 10.07zm6.787-8.201L1.591 6.602l4.339 2.76 7.494-7.493z"/></svg>
+                </button>
+            </div>
+            <div style="text-align:center;">
+                <button class="stop-btn" id="stopBtn" onclick="stopGeneration()" aria-label="停止生成">
+                    <span class="stop-icon"></span>停止生成
+                </button>
+            </div>
+            <div class="quick-asks" id="quickAsks"><span class="quick-chip">加载示例...</span></div>
+        </div>
+    </div>
+</main>
+
+<div class="toast-container" id="toastContainer"></div>
+<button class="scroll-bottom-btn" id="scrollBottomBtn" onclick="scrollToBottom()" title="滚动到底部" aria-label="滚动到底部">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M8 1a.5.5 0 01.5.5v11.793l3.146-3.147a.5.5 0 01.708.708l-4 4a.5.5 0 01-.708 0l-4-4a.5.5 0 01.708-.708L7.5 13.293V1.5A.5.5 0 018 1z"/></svg>
+</button>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- ══════════════════════════════════ SCRIPTS ══════════════════════════════════ -->
+<script>
+    let sessionId = '';
+    let currentMode = 'rag';
+    let isStreaming = false;
+    let currentBotBubble = null;
+    let currentBotDiv = null;
+    let currentAnswerText = '';
+    let currentAnswerMeta = null;
+    let topK = 3;
+    let abortController = null;
+    let lastUserQuestion = '';
+
+    marked.setOptions({ breaks: true, gfm: true });
+    hljs.configure({ languages: ['python','bash','javascript','java','cpp','sql','json','yaml'] });
+
+    // ── Theme ──────────────────────
+    function getTheme() {
+        return document.documentElement.getAttribute('data-theme') || 'dark';
+    }
+    function detectSystemTheme() { return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'; }
+    function setTheme(t) {
+        document.documentElement.setAttribute('data-theme', t);
+        localStorage.setItem('ai-qa-theme', t);
+        updateThemeIcon(t);
+    }
+    function toggleTheme() {
+        setTheme(getTheme() === 'dark' ? 'light' : 'dark');
+        document.querySelectorAll('.bubble pre code').forEach(b => hljs.highlightElement(b));
+    }
+    function updateThemeIcon(t) {
+        const sun = document.getElementById('themeIconSun');
+        const moon = document.getElementById('themeIconMoon');
+        if (t === 'light') { sun.style.display = 'none'; moon.style.display = ''; }
+        else { sun.style.display = ''; moon.style.display = 'none'; }
+    }
+
+    // ── Sidebar mobile ─────────────
+    function toggleSidebar() {
+        document.querySelector('.sidebar').classList.toggle('open');
+        document.getElementById('sidebarOverlay').classList.toggle('active');
+    }
+    function closeSidebar() {
+        document.querySelector('.sidebar').classList.remove('open');
+        document.getElementById('sidebarOverlay').classList.remove('active');
+    }
+
+    // ── Init ───────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        // Theme: localStorage > prefers-color-scheme > dark
+        const saved = localStorage.getItem('ai-qa-theme');
+        setTheme(saved || detectSystemTheme());
+        // Listen for system theme changes if user hasn't set a preference
+        window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
+            if (!localStorage.getItem('ai-qa-theme')) setTheme(e.matches ? 'light' : 'dark');
+        });
+
+        initSession();
+        loadSamples();
+        renderConvList();
+
+        const inp = document.getElementById('questionInput');
+        inp.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && !e.shiftKey && !isStreaming) {
+                e.preventDefault();
+                askQuestion();
+            }
+        });
+        // Auto-resize textarea
+        inp.addEventListener('input', () => {
+            inp.style.height = 'auto';
+            inp.style.height = Math.min(inp.scrollHeight, 120) + 'px';
+        });
+        document.addEventListener('keydown', e => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); inp.focus(); }
+        });
+        document.getElementById('topKSlider').addEventListener('input', function() { topK = parseInt(this.value); });
+
+        // Scroll-to-bottom visibility
+        const chatArea = document.getElementById('chatArea');
+        chatArea.addEventListener('scroll', () => {
+            const btn = document.getElementById('scrollBottomBtn');
+            const dist = chatArea.scrollHeight - chatArea.scrollTop - chatArea.clientHeight;
+            btn.classList.toggle('visible', dist > 150);
+        });
+    });
+
+    async function initSession(quiet) {
+        try {
+            const r = await fetch('/api/conversation/new', { method: 'POST' });
+            const d = await r.json();
+            sessionId = d.session_id;
+        } catch(e) { /* ignore */ }
+        if (!quiet) renderConvList();
+        checkHealth();
+    }
+
+    async function checkHealth() {
+        try {
+            const r = await fetch('/api/health');
+            const d = await r.json();
+            if (currentMode === 'rag' && !d.llm_loaded) currentMode = 'retrieval';
+            updateModeUI();
+            document.getElementById('sideBackend').textContent = (d.llm_backend || 'local') === 'api' ? 'API 云端' : '本地模型';
+            document.getElementById('sideMode').textContent = d.mode === 'rag' ? 'RAG 生成' : '检索匹配';
+            document.getElementById('sideDevice').textContent = d.device || '检测中...';
+            document.getElementById('sideQaCount').textContent = (d.qa_count || 0) + ' 条';
+        } catch(e) {
+            setTimeout(checkHealth, 3000);
+        }
+    }
+
+    function updateModeUI() {
+        const pill = document.getElementById('modePill');
+        if (currentMode === 'rag') {
+            pill.textContent = 'RAG 生成';
+            pill.className = 'mode-pill rag';
+        } else {
+            pill.textContent = '检索匹配';
+            pill.className = 'mode-pill retrieval';
+        }
+    }
+
+    function toggleMode() {
+        currentMode = currentMode === 'rag' ? 'retrieval' : 'rag';
+        updateModeUI();
+        toast(currentMode === 'rag' ? '已切换到 RAG 生成模式' : '已切换到检索匹配模式');
+    }
+
+    // ── Sessions ────────────────────
+    async function newSession() {
+        // Save current conversation before switching
+        if (sessionId) saveConversation();
+        try {
+            const r = await fetch('/api/conversation/new', { method: 'POST' });
+            const d = await r.json();
+            sessionId = d.session_id;
+            clearChatDOM();
+            renderConvList();
+            toast('已创建新对话', 'success');
+        } catch(e) { toast('创建会话失败', 'error'); }
+    }
+
+    function clearChat() {
+        // Also clear server-side
+        if (sessionId) {
+            fetch('/api/conversation/' + sessionId + '/clear', { method: 'POST' }).catch(() => {});
+        }
+        clearChatDOM();
+        toast('对话已清屏', 'success');
+    }
+
+    function clearChatDOM() {
+        const area = document.getElementById('chatArea');
+        area.innerHTML = `<div class="empty-state">
+            <div class="icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+                </svg>
+            </div>
+            <h2>康语 · 健康问答助手</h2>
+            <p>基于 MacBERT + ChromaDB + BM25 + BGE Reranker + Qwen2.5 的 RAG 检索增强生成系统。覆盖日常养生与基础医学科普，输入健康相关问题，获得通俗易懂的知识解答。</p>
+        </div>`;
+        currentBotBubble = null; currentBotDiv = null; currentAnswerText = ''; currentAnswerMeta = null;
+    }
+
+    // ── Conversation persistence ────
+    function getConvList() {
+        try { return JSON.parse(localStorage.getItem('qa-conv-list') || '[]'); } catch(e) { return []; }
+    }
+    function saveConvList(list) {
+        localStorage.setItem('qa-conv-list', JSON.stringify(list));
+    }
+    function upsertConvMeta() {
+        if (!sessionId) return;
+        const area = document.getElementById('chatArea');
+        const msgs = area.querySelectorAll('.user-msg .bubble');
+        // Derive title from first user question (max 25 chars)
+        let title = '当前对话';
+        if (msgs.length > 0) {
+            const t = msgs[0].textContent.trim();
+            title = t.length > 25 ? t.substring(0, 25) + '…' : t;
+        }
+        const msgCount = area.querySelectorAll('.user-msg').length;
+        let list = getConvList();
+        const existing = list.find(c => c.id === sessionId);
+        const entry = { id: sessionId, title, time: Date.now(), msgCount };
+        if (existing) {
+            // Update in place
+            Object.assign(existing, entry);
+        } else {
+            list.unshift(entry);
+            // Keep max 50 conversations
+            if (list.length > 50) list = list.slice(0, 50);
+        }
+        saveConvList(list);
+        renderConvList();
+    }
+    function saveConversation() {
+        if (!sessionId) return;
+        const area = document.getElementById('chatArea');
+        const messages = [];
+        area.querySelectorAll('.user-msg, .bot-msg').forEach(el => {
+            if (el.classList.contains('user-msg')) {
+                messages.push({ role: 'user', text: el.querySelector('.bubble').textContent });
+            } else {
+                const bubble = el.querySelector('.bubble');
+                messages.push({ role: 'assistant', html: bubble.innerHTML });
+            }
+        });
+        if (messages.length > 0) localStorage.setItem('qa-conv-' + sessionId, JSON.stringify(messages.slice(-50)));
+        upsertConvMeta();
+    }
+    function restoreConversation(sid) {
+        const id = sid || sessionId;
+        if (!id) return;
+        const saved = localStorage.getItem('qa-conv-' + id);
+        if (!saved) return;
+        try {
+            const messages = JSON.parse(saved);
+            if (messages.length === 0) return;
+            removeEmptyState();
+            messages.forEach(m => {
+                if (m.role === 'user') appendUserMessageDOM(m.text);
+                else appendBotMessageDOM(m.html);
+            });
+            scrollToBottom();
+        } catch(e) { /* ignore */ }
+    }
+    function switchConversation(sid) {
+        // No-op: already viewing this conversation
+        if (sid === sessionId || (!sid && !sessionId)) return;
+        // Save current conversation before switching away
+        if (sessionId) saveConversation();
+        clearChatDOM();
+        if (sid) {
+            // Load a saved conversation
+            sessionId = sid;
+            restoreConversation(sid);
+            renderConvList();
+        } else {
+            // Create fresh conversation
+            sessionId = '';
+            initSession(true).then(() => renderConvList());
+            return; // initSession will call renderConvList
+        }
+        closeSidebar();
+    }
+    function deleteConversation(sid, e) {
+        e.stopPropagation();
+        if (!confirm('确定删除这条对话记录吗？')) return;
+        localStorage.removeItem('qa-conv-' + sid);
+        let list = getConvList().filter(c => c.id !== sid);
+        saveConvList(list);
+        if (sid === sessionId) {
+            clearChatDOM();
+            sessionId = '';
+            initSession(true).then(() => renderConvList());
+        } else {
+            renderConvList();
+        }
+        toast('对话已删除');
+    }
+    function renderConvList() {
+        const container = document.getElementById('convList');
+        const list = getConvList();
+        const label = document.querySelector('.conv-list-label');
+        if (label) {
+            label.innerHTML = list.length > 0 ? `历史对话 <span class="conv-list-count">${list.length} 条</span>` : '历史对话';
+        }
+        let html = '';
+        const now = Date.now();
+        // Always show current session at top
+        const isCurrentSaved = sessionId && list.find(c => c.id === sessionId);
+        html += `<div class="conv-item${isCurrentSaved ? '' : ' active'}" data-sid="" onclick="switchConversation('')">
+            <span class="conv-dot"></span><span class="conv-title">当前对话</span>
+        </div>`;
+        // Then show saved conversations
+        list.forEach(c => {
+            const isActive = c.id === sessionId;
+            // Skip the current session if it's already shown as "当前对话" above
+            const timeStr = formatRelativeTime(c.time, now);
+            html += `<div class="conv-item${isActive ? ' active' : ''}" data-sid="${c.id}" onclick="switchConversation('${c.id}')">
+                <span class="conv-dot"></span>
+                <span class="conv-info">
+                    <span class="conv-title">${escHtml(c.title)}</span>
+                    <span class="conv-time">${timeStr} · ${c.msgCount || 0} 条问答</span>
+                </span>
+                <button class="conv-del" onclick="deleteConversation('${c.id}', event)" title="删除">×</button>
+            </div>`;
+        });
+        // If no saved conversations, show hint
+        if (list.length === 0) {
+            html += `<div style="font-size:11px;color:var(--text-muted);padding:8px 14px;text-align:center;">发送问题后自动保存</div>`;
+        }
+        container.innerHTML = html;
+    }
+    function formatRelativeTime(ts, now) {
+        const diff = now - ts;
+        if (diff < 60000) return '刚刚';
+        if (diff < 3600000) return Math.floor(diff / 60000) + ' 分钟前';
+        if (diff < 86400000) return Math.floor(diff / 3600000) + ' 小时前';
+        if (diff < 604800000) return Math.floor(diff / 86400000) + ' 天前';
+        return new Date(ts).toLocaleDateString('zh-CN');
+    }
+    function appendUserMessageDOM(text) {
+        const area = document.getElementById('chatArea');
+        const div = document.createElement('div');
+        div.className = 'user-msg';
+        div.innerHTML = `<div class="bubble">${escHtml(text)}</div>`;
+        area.appendChild(div);
+    }
+    function appendBotMessageDOM(html) {
+        const area = document.getElementById('chatArea');
+        const div = document.createElement('div');
+        div.className = 'bot-msg';
+        div.innerHTML = `<div class="avatar">康</div><div class="msg-wrap"><div class="bubble">${html}</div></div>`;
+        area.appendChild(div);
+    }
+
+    // ── Sample Questions ────────────
+    async function loadSamples() {
+        const c = document.getElementById('quickAsks');
+        try {
+            const r = await fetch('/api/sample_questions');
+            const d = await r.json();
+            if (d.samples && d.samples.length > 0) {
+                c.innerHTML = d.samples.slice(0, 8).map(s =>
+                    `<span class="quick-chip" onclick="askSample('${escHtml(s.question)}')" title="${escHtml(s.knowledge_point)}">
+                        ${escHtml(s.question.length > 30 ? s.question.substring(0, 30) + '...' : s.question)}
+                    </span>`
+                ).join('');
+            }
+        } catch(e) {
+            c.innerHTML = '<span class="quick-chip" onclick="loadSamples()" style="cursor:pointer;" title="点击重新加载">加载失败，点击重试</span>';
+        }
+    }
+
+    function askSample(q) {
+        document.getElementById('questionInput').value = q;
+        askQuestion();
+    }
+
+    // ── Ask ─────────────────────────
+    async function askQuestion(retryText) {
+        const input = document.getElementById('questionInput');
+        const question = retryText || input.value.trim();
+        if (!question || isStreaming) return;
+
+        isStreaming = true;
+        lastUserQuestion = question;
+        const btn = document.getElementById('sendBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        btn.disabled = true; input.disabled = true;
+        stopBtn.classList.add('visible');
+        // Change send button to indicate busy state
+        btn.style.opacity = '0.4';
+
+        removeEmptyState();
+        if (!retryText) {
+            appendUserMessage(question);
+            input.value = '';
+            input.style.height = 'auto';
+        }
+
+        const botDiv = retryText ? createBotMessage() : createBotMessage();
+        currentBotDiv = botDiv;
+        currentBotBubble = botDiv.querySelector('.bubble');
+        currentAnswerText = '';
+        currentAnswerMeta = null;
+
+        // Show RAG progress
+        const progressEl = showProgress(botDiv);
+
+        abortController = new AbortController();
+
+        try {
+            const res = await fetch('/api/ask/stream', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question, session_id: sessionId, top_k: topK, mode: currentMode }),
+                signal: abortController.signal
+            });
+
+            const newSid = res.headers.get('X-Session-Id');
+            if (newSid && newSid !== sessionId) { sessionId = newSid; saveConversation(); }
+
+            updateProgress(progressEl, 2, '正在检索...');
+
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let firstTokenReceived = false;
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+                for (const line of lines) {
+                    if (!line.startsWith('data: ')) continue;
+                    const dataStr = line.slice(6);
+                    try {
+                        if (!firstTokenReceived) {
+                            updateProgress(progressEl, 3, '正在生成回答...');
+                            firstTokenReceived = true;
+                        }
+                        handleSSE(JSON.parse(dataStr), botDiv);
+                    } catch(_) {
+                        if (dataStr && dataStr.length > 0 && dataStr !== '{}') {
+                            if (!firstTokenReceived) { updateProgress(progressEl, 3, '正在生成回答...'); firstTokenReceived = true; }
+                            appendToken(dataStr);
+                        }
+                    }
+                }
+            }
+            hideProgress(progressEl);
+        } catch(e) {
+            hideProgress(progressEl);
+            if (e.name !== 'AbortError') {
+                const errMsg = e.message.includes('Failed to fetch') ? '网络连接失败，请检查网络后重试' : e.message;
+                currentBotBubble.innerHTML = `<span style="color:var(--danger);">请求失败: ${escHtml(errMsg)}</span>
+                    <button class="retry-btn" onclick="retryLast()"><svg viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M8 3a5 5 0 104.546 2.914.5.5 0 01.908-.417A6 6 0 118 2v1z"/><path d="M8 4.466V.534a.25.25 0 01.41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 018 4.466z"/></svg>重试</button>`;
+                toast('请求失败: ' + errMsg, 'error');
+            }
+        }
+
+        // Finalize
+        if (currentAnswerMeta) {
+            finalizeAnswer(botDiv, currentAnswerMeta);
+        } else if (currentAnswerText) {
+            currentBotBubble.innerHTML = marked.parse(currentAnswerText) + '</div>';
+            enhanceCodeBlocks(currentBotBubble);
+            addRetryButton(botDiv);
+            addPerMessageDisclaimer(botDiv);
+        }
+
+        isStreaming = false;
+        btn.disabled = false; input.disabled = false;
+        btn.style.opacity = '1';
+        stopBtn.classList.remove('visible');
+        input.focus();
+        abortController = null;
+        saveConversation();
+    }
+
+    function stopGeneration() {
+        if (abortController) { abortController.abort(); }
+        const stopBtn = document.getElementById('stopBtn');
+        stopBtn.classList.remove('visible');
+        toast('已停止生成', 'success');
+    }
+
+    function retryLast() {
+        if (currentBotDiv) currentBotDiv.remove();
+        askQuestion(lastUserQuestion);
+    }
+
+    // ── RAG Progress ──────────────
+    function showProgress(botDiv) {
+        const wrap = botDiv.querySelector('.msg-wrap');
+        const el = document.createElement('div');
+        el.className = 'rag-progress visible';
+        el.innerHTML = `<span class="step active">🔍 检索中</span><span class="step-arrow">→</span><span class="step">排序</span><span class="step-arrow">→</span><span class="step">生成</span>`;
+        wrap.appendChild(el);
+        return el;
+    }
+    function updateProgress(el, stepIdx, text) {
+        const steps = el.querySelectorAll('.step');
+        steps.forEach((s, i) => {
+            if (i < stepIdx) s.className = 'step done';
+            else if (i === stepIdx) s.className = 'step active';
+            else s.className = 'step';
+        });
+        if (text) steps[stepIdx] && (steps[stepIdx].textContent = text);
+    }
+    function hideProgress(el) { if (el) { el.classList.remove('visible'); setTimeout(() => el.remove(), 300); } }
+
+    function handleSSE(data, botDiv) {
+        switch (data.type) {
+            case 'token':
+                appendToken(data.text);
+                break;
+            case 'done':
+                currentAnswerText = data.answer || currentAnswerText;
+                currentAnswerMeta = data;
+                break;
+            case 'error':
+                currentBotBubble.innerHTML += `<span style="color:var(--danger);">${escHtml(data.text)}</span>`;
+                break;
+            case 'answer':
+                currentBotBubble.innerHTML = marked.parse(data.text);
+                enhanceCodeBlocks(currentBotBubble);
+                break;
+        }
+    }
+
+    function appendToken(text) {
+        currentAnswerText += text;
+        currentBotBubble.innerHTML = marked.parse(currentAnswerText) + '<span class="typing-cursor"></span>';
+        enhanceCodeBlocks(currentBotBubble);
+        scrollToBottom();
+    }
+
+    function finalizeAnswer(botDiv, data) {
+        const bubble = botDiv.querySelector('.bubble');
+        bubble.classList.remove('streaming');
+        const answerContent = currentAnswerText || data.answer || '';
+        let html = '';
+
+        // Answer content
+        html += `<div class="answer-content">${marked.parse(answerContent)}</div>`;
+
+        // Score bar
+        if (data.similarity != null) {
+            const simPct = (data.similarity * 100).toFixed(1);
+            html += `<div class="meta-section">
+                <div class="score-bar">
+                    <span>检索匹配度</span>
+                    <div class="track"><div class="fill" style="width:${data.similarity*100}%;"></div></div>
+                    <span style="font-weight:600;color:var(--blue-400);">${simPct}%</span>
+                </div>`;
+        }
+
+        // Knowledge point
+        if (data.knowledge_point) {
+            html += `<div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;font-weight:500;">知识点: ${escHtml(data.knowledge_point)}</div>`;
+        }
+        html += `</div>`;
+
+        // Sources
+        if (data.sources && data.sources.length > 0) {
+            html += `<div class="source-chips">`;
+            data.sources.forEach((s, i) => {
+                const pct = (s.similarity * 100).toFixed(0);
+                html += `<span class="source-chip" onclick="askSample('${escHtml(s.question)}')" title="点击重新搜索: ${escHtml(s.question)}">
+                    <strong>[${i+1}]</strong> ${escHtml(s.knowledge_point)}&nbsp;<span style="opacity:0.7;">${pct}%</span>
+                </span>`;
+            });
+            html += `</div>`;
+        }
+
+        // Retrieval source tag
+        html += `<div class="retrieval-source-tag">
+            <span class="src-icon"></span>
+            检索来源：${data.mode === 'rag' ? 'RAG 生成 · Qwen2.5' : '向量检索 · MacBERT'}
+        </div>`;
+
+        // Per-message medical disclaimer
+        html += `<div class="msg-disclaimer">⚠️ 健康提示：以上内容仅为科普参考，不能替代专业医疗诊断与治疗。如有不适或症状持续，请及时到正规医院就诊。紧急情况请拨打 <strong>120</strong>。</div>`;
+
+        // Feedback + actions row
+        html += `<div class="feedback-row">
+            <button class="thumbs-up" onclick="submitFeedback(this, 'helpful')" title="有帮助" aria-label="有帮助">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8.864.73a2.976 2.976 0 01.946 1.455l.186.76a3.674 3.674 0 001.057 1.77l.322.29a.75.75 0 01-.416 1.306l-2.138.33a2.268 2.268 0 00-1.458.882c-.35.488-.517 1.073-.43 1.64l.074.482c.142.914.216 1.84.221 2.767v.05A2.51 2.51 0 015.188 15a.944.944 0 01-.944-.938v-3.9a2.75 2.75 0 00-4.067.728.85.85 0 01-.177.23v-7.09a.65.65 0 01.17-.126 6.25 6.25 0 015.577-.652c.31.066.73.222 1.085.41.172.092.631.415 1.061.721.543.386 1.113.79 1.177.85z"/></svg>有帮助
+            </button>
+            <button class="thumbs-down" onclick="submitFeedback(this, 'not_helpful')" title="无帮助" aria-label="无帮助">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M7.136.73a2.976 2.976 0 00-.946 1.455l-.186.76a3.674 3.674 0 01-1.057 1.77l-.322.29a.75.75 0 00.416 1.306l2.138.33a2.268 2.268 0 011.458.882c.35.488.517 1.073.43 1.64l-.074.482c-.142.914-.216 1.84-.221 2.767v.05A2.51 2.51 0 0010.812 15a.944.944 0 00.944-.938v-3.9a2.75 2.75 0 014.067.728.85.85 0 00.177.23v-7.09a.65.65 0 00-.17-.126 6.25 6.25 0 00-5.577-.652c-.31.066-.73.222-1.085.41-.172.092-.631.415-1.061.721-.543.386-1.113.79-1.177.85z"/></svg>无帮助
+            </button>
+            <span style="flex:1;"></span>
+            <button class="retry-btn" onclick="retryLast()" title="重新生成" aria-label="重新生成">
+                <svg viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M8 3a5 5 0 104.546 2.914.5.5 0 01.908-.417A6 6 0 118 2v1z"/><path d="M8 4.466V.534a.25.25 0 01.41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 018 4.466z"/></svg>重试
+            </button>
+            <button onclick="copyAnswer(this)" title="复制答案" aria-label="复制答案">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"/></svg>复制
+            </button>
+        </div>`;
+
+        bubble.innerHTML = html;
+        enhanceCodeBlocks(bubble);
+        addPerMessageDisclaimer(botDiv); // already included inline
+        addRetryButton(botDiv); // already included inline
+        scrollToBottom();
+    }
+
+    function addRetryButton(botDiv) {
+        // Already included in finalizeAnswer inline; only used as fallback
+        const bubble = botDiv.querySelector('.bubble');
+        if (!bubble.querySelector('.retry-btn')) {
+            const btn = document.createElement('button');
+            btn.className = 'retry-btn';
+            btn.onclick = retryLast;
+            btn.setAttribute('aria-label', '重新生成');
+            btn.innerHTML = `<svg viewBox="0 0 16 16" fill="currentColor" width="12"><path fill-rule="evenodd" d="M8 3a5 5 0 104.546 2.914.5.5 0 01.908-.417A6 6 0 118 2v1z"/><path d="M8 4.466V.534a.25.25 0 01.41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 018 4.466z"/></svg>重试`;
+            bubble.appendChild(btn);
+        }
+    }
+
+    function addPerMessageDisclaimer(botDiv) {
+        const bubble = botDiv.querySelector('.bubble');
+        if (!bubble.querySelector('.msg-disclaimer')) {
+            const disc = document.createElement('div');
+            disc.className = 'msg-disclaimer';
+            disc.innerHTML = '⚠️ 健康提示：以上内容仅为科普参考，不能替代专业医疗诊断与治疗。如有不适或症状持续，请及时到正规医院就诊。紧急情况请拨打 <strong>120</strong>。';
+            bubble.appendChild(disc);
+        }
+    }
+
+    function addRetrievalTag(botDiv) {
+        const bubble = botDiv.querySelector('.bubble');
+        const tag = document.createElement('div');
+        tag.className = 'retrieval-source-tag';
+        tag.innerHTML = '<span class="src-icon"></span>检索来源：' + (currentMode === 'rag' ? 'RAG 生成 · Qwen2.5' : '向量检索 · MacBERT');
+        bubble.appendChild(tag);
+    }
+
+    function addFeedbackButtons(botDiv) {
+        const bubble = botDiv.querySelector('.bubble');
+        const row = document.createElement('div');
+        row.className = 'feedback-row';
+        row.innerHTML = `
+            <button class="thumbs-up" onclick="submitFeedback(this, 'helpful')">有帮助</button>
+            <button class="thumbs-down" onclick="submitFeedback(this, 'not_helpful')">无帮助</button>
+            <span style="flex:1;"></span>
+            <button onclick="copyAnswer(this)">复制</button>`;
+        bubble.appendChild(row);
+    }
+
+    // ── UI helpers ───────────────────
+    function removeEmptyState() {
+        const es = document.querySelector('.empty-state');
+        if (es) es.remove();
+    }
+
+    function appendUserMessage(text) {
+        lastUserQuestion = text;
+        appendUserMessageDOM(text);
+        scrollToBottom();
+    }
+
+    function createBotMessage() {
+        const area = document.getElementById('chatArea');
+        const div = document.createElement('div');
+        div.className = 'bot-msg';
+        div.innerHTML = `<div class="avatar">康</div><div class="msg-wrap"><div class="bubble streaming"><div class="loading-dots"><span></span><span></span><span></span></div></div></div>`;
+        area.appendChild(div);
+        scrollToBottom();
+        return div;
+    }
+
+    function scrollToBottom() {
+        const area = document.getElementById('chatArea');
+        requestAnimationFrame(() => { area.scrollTop = area.scrollHeight; });
+    }
+
+    // ── Code Block Enhancement ──────
+    function enhanceCodeBlocks(el) {
+        el.querySelectorAll('pre').forEach(pre => {
+            // Skip if already enhanced
+            if (pre.querySelector('.code-toolbar')) return;
+
+            const code = pre.querySelector('code');
+            const lang = code ? detectLanguage(code) : 'python';
+
+            // Highlight
+            if (code) hljs.highlightElement(code);
+
+            // Wrap content
+            const wrapper = document.createElement('div');
+            wrapper.style.position = 'relative';
+
+            // Toolbar
+            const toolbar = document.createElement('div');
+            toolbar.className = 'code-toolbar';
+            toolbar.innerHTML = `
+                <span class="lang-tag">${lang}</span>
+                <div class="tb-actions">
+                    <button class="tb-btn" onclick="copyCodeBlock(this)" title="复制代码">
+                        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"/></svg>
+                        复制
+                    </button>
+                    <button class="tb-btn" onclick="toggleCodeBlock(this)" title="收起代码">
+                        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M3.854 2.146a.5.5 0 10-.708.708L6.293 6l-3.147 3.146a.5.5 0 10.708.708L7.707 6 3.854 2.146z"/></svg>
+                    </button>
+                </div>`;
+
+            // Move code into wrapper
+            pre.parentNode.insertBefore(wrapper, pre);
+            wrapper.appendChild(toolbar);
+            wrapper.appendChild(pre);
+        });
+    }
+
+    function detectLanguage(code) {
+        const text = code.textContent || '';
+        const cls = code.className || '';
+        if (cls.includes('python') || text.includes('def ') || text.includes('import ') || text.includes('print(')) return 'python';
+        if (cls.includes('javascript') || cls.includes('js') || text.includes('const ') || text.includes('function ')) return 'javascript';
+        if (cls.includes('bash') || cls.includes('sh') || text.includes('#!/bin/bash')) return 'bash';
+        if (cls.includes('sql') || text.match(/SELECT|INSERT|CREATE/i)) return 'sql';
+        if (cls.includes('json') || text.match(/^\s*[\[{]/)) return 'json';
+        return 'python';
+    }
+
+    function copyCodeBlock(btn) {
+        const pre = btn.closest('.code-toolbar').nextElementSibling;
+        const code = pre ? pre.textContent : '';
+        navigator.clipboard.writeText(code).then(() => {
+            btn.classList.add('copied');
+            btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/></svg> 已复制`;
+            toast('代码已复制到剪贴板', 'success');
+            setTimeout(() => {
+                btn.classList.remove('copied');
+                btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"/></svg> 复制`;
+            }, 2000);
+        }).catch(() => toast('复制失败', 'error'));
+    }
+
+    function toggleCodeBlock(btn) {
+        const pre = btn.closest('.code-toolbar').nextElementSibling;
+        if (!pre) return;
+        const icon = btn.querySelector('svg');
+        if (pre.style.display === 'none') {
+            pre.style.display = '';
+            icon.innerHTML = '<path d="M3.854 2.146a.5.5 0 10-.708.708L6.293 6l-3.147 3.146a.5.5 0 10.708.708L7.707 6 3.854 2.146z"/>';
+            btn.childNodes[1] && (btn.childNodes[1].textContent = ' 收起');
+        } else {
+            pre.style.display = 'none';
+            icon.innerHTML = '<path d="M4.646 1.646a.5.5 0 01.708 0l3.5 3.5a.5.5 0 010 .708l-3.5 3.5a.5.5 0 01-.708-.708L7.793 5.5 4.646 2.354a.5.5 0 010-.708z"/>';
+            btn.childNodes[1] && (btn.childNodes[1].textContent = ' 展开');
+        }
+    }
+
+    function copyAnswer(btn) {
+        const bubble = btn.closest('.bubble');
+        // Only copy the answer content, not metadata
+        const answerEl = bubble.querySelector('.answer-content');
+        const text = answerEl ? answerEl.textContent : (currentAnswerText || bubble.textContent || '');
+        navigator.clipboard.writeText(text.trim()).then(() => {
+            btn.innerHTML = '已复制';
+            toast('答案已复制到剪贴板', 'success');
+            setTimeout(() => { btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"/></svg>复制'; }, 2000);
+        }).catch(() => toast('复制失败', 'error'));
+    }
+
+    // ── Feedback ────────────────────
+    async function submitFeedback(btn, rating) {
+        const bubble = btn.closest('.bubble');
+        const botDiv = btn.closest('.bot-msg');
+        const prev = botDiv?.previousElementSibling;
+        const question = prev?.querySelector('.bubble')?.textContent || '';
+        const answerText = currentAnswerText || bubble.textContent || '';
+
+        try {
+            await fetch('/api/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    question, answer: answerText.substring(0, 500),
+                    rating, session_id: sessionId, mode: currentMode
+                })
+            });
+            const row = btn.parentElement;
+            row.querySelectorAll('button').forEach(b => { b.disabled = true; b.classList.remove('voted'); });
+            btn.classList.add('voted');
+            toast(rating === 'helpful' ? '感谢反馈！' : '感谢反馈，我们会改进', 'success');
+        } catch(e) { /* ignore */ }
+    }
+
+    // ── Toast ───────────────────────
+    function toast(msg, type) {
+        const container = document.getElementById('toastContainer');
+        const el = document.createElement('div');
+        el.className = 'toast' + (type ? ' ' + type : '');
+        el.textContent = msg;
+        el.setAttribute('role', 'status');
+        el.setAttribute('aria-live', 'polite');
+        container.appendChild(el);
+        // Auto-remove with animation
+        setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateX(100%)'; setTimeout(() => el.remove(), 300); }, 3200);
+    }
+
+    // ── Escape helpers ──────────────
+    function escHtml(text) {
+        const d = document.createElement('div');
+        d.textContent = text;
+        return d.innerHTML;
+    }
+
+    function escAttr(text) {
+        return text.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'\\"');
+    }
+</script>
+</body>
+</html>

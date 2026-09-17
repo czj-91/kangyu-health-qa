@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Git
+.git/
+.gitignore
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 环境
+.env
+.env.local
+
+# HuggingFace 缓存 (运行时挂载)
+.cache/
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# 文档和报告 (不需要打包进镜像)
+*.docx
+实验报告*.docx

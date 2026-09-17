@@ -1,0 +1,69 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 模型文件 (体积巨大)
+model/
+*.bin
+*.safetensors
+*.pt
+*.pth
+*.ckpt
+
+# 数据文件
+data/processed/
+data/chroma_db/
+data/raw/
+*.jsonl
+
+# 日志
+logs/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Jupyter
+.ipynb_checkpoints/
+
+# pytest
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# 课程报告辅助脚本（非项目服务代码，含本机绝对路径）
+fill_report.py
+
+# 本机数据与 Agent 配置
+.claude/
+.codex/
+.mcp.json
+data/cMedQA2/
+data/webMedQA/
+data/Chinese-Python-QA-Dataset/
+data/Health-QA-Dataset/*.backup
