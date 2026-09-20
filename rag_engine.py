@@ -11,7 +11,7 @@ from config import (
     init_env, EMBED_MODEL_NAME, FINE_TUNED_MODEL_DIR, TOP_K_RETRIEVAL,
     MAX_SEQ_LENGTH, RAG_MODE, ENABLE_QUERY_REWRITE,
 )
-from prompts import build_rag_prompt, QUERY_REWRITE_PROMPT, sanitize_answer
+from prompts import build_rag_prompt, QUERY_REWRITE_PROMPT, NO_RESULT_HINT, sanitize_answer
 from retriever.hybrid import HybridRetriever
 from logger_config import logger
 
@@ -166,7 +166,7 @@ class RAGEngine:
         results = self.search(question, chat_history, top_k)
         if not results:
             return {
-                "answer": "抱歉，未找到相关答案。请尝试其他问题。",
+                "answer": NO_RESULT_HINT,
                 "mode": self.effective_mode,
                 "results": [],
             }
@@ -226,7 +226,7 @@ class RAGEngine:
         """流式问答 — 生成器"""
         results = self.search(question, chat_history, top_k)
         if not results:
-            yield json.dumps({"type": "answer", "text": "抱歉，未找到相关答案。"})
+            yield json.dumps({"type": "answer", "text": NO_RESULT_HINT})
             return
 
         best = results[0]

@@ -1996,11 +1996,13 @@
             html += `</div>`;
         }
 
-        // Retrieval source tag
-        html += `<div class="retrieval-source-tag">
-            <span class="src-icon"></span>
-            检索来源：${data.mode === 'rag' ? 'RAG 生成 · Qwen2.5' : '向量检索 · MacBERT'}
-        </div>`;
+        // Retrieval source tag (off_topic 引导语无检索来源, 不渲染)
+        if (data.mode !== 'off_topic') {
+            html += `<div class="retrieval-source-tag">
+                <span class="src-icon"></span>
+                检索来源：${data.mode === 'rag' ? 'RAG 生成 · Qwen2.5' : '向量检索 · MacBERT'}
+            </div>`;
+        }
 
         // Per-message medical disclaimer
         html += `<div class="msg-disclaimer">⚠️ 健康提示：以上内容仅为科普参考，不能替代专业医疗诊断与治疗。如有不适或症状持续，请及时到正规医院就诊。紧急情况请拨打 <strong>120</strong>。</div>`;

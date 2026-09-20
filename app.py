@@ -17,6 +17,25 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from config import HOST, PORT, DEBUG, TOP_K_RETRIEVAL, RAG_MODE, ROOT_DIR, LLM_BACKEND
+from input_guard import classify_input, OFF_TOPIC_KINDS
+from prompts import OFF_TOPIC_HINT, GIBBERISH_HINT, NO_RESULT_HINT
+
+
+def _guard_hint(question: str, chat_history: str) -> str | None:
+    """非健康/无意义输入 → 返回引导话术; 健康/不确定/多轮追问 → None(放行)。
+
+    有对话历史时豁免: 追问("那吃什么药""为什么")天然缺少领域词, 误伤代价高。
+    """
+    if chat_history:
+        return None
+    kind = classify_input(question)
+    if kind == "gibberish":
+        return GIBBERISH_HINT
+    if kind in OFF_TOPIC_KINDS:
+        return OFF_TOPIC_HINT
+    return None
+
+
 from rag_engine import Retriever, RAGEngine, LLMLike
 from llm_engine import get_llm
 from api_llm import get_api_llm
@@ -247,6 +266,16 @@ async def ask_question(req: AskRequest):
     session_id = req.session_id or conv_manager.create_session()
     chat_history = conv_manager.get_history(session_id)
 
+    # 非健康/无意义输入 → 直接返回引导话术(不污染会话历史, 不浪费 LLM 推理)
+    hint = _guard_hint(req.question, chat_history)
+    if hint:
+        return {
+            "answer": hint,
+            "mode": "off_topic",
+            "results": [],
+            "session_id": session_id,
+        }
+
     _resolve_request_mode(req.mode, rag_engine)
 
     result = rag_engine.ask(req.question, chat_history, req.top_k)
@@ -269,6 +298,16 @@ async def ask_stream(req: AskRequest):
     session_id = req.session_id or conv_manager.create_session()
     chat_history = conv_manager.get_history(session_id)
 
+    # 非健康/无意义输入: 流式也走引导话术, 不进入检索/生成
+    hint = _guard_hint(req.question, chat_history)
+    if hint:
+        def _hint_gen():
+            yield f"data: {json_module.dumps({'type': 'answer', 'text': hint}, ensure_ascii=False)}\n\n"
+            yield f"data: {json_module.dumps({'type': 'done', 'answer': hint, 'mode': 'off_topic'}, ensure_ascii=False)}\n\n"
+        resp = StreamingResponse(_hint_gen(), media_type="text/event-stream")
+        resp.headers["X-Session-Id"] = session_id
+        return resp
+
     _resolve_request_mode(req.mode, rag_engine)
 
     results = rag_engine.search(req.question, chat_history, req.top_k)
@@ -277,7 +316,7 @@ async def ask_stream(req: AskRequest):
 
     def generate():
         if not results:
-            yield f"data: {json_module.dumps({'type': 'answer', 'text': '抱歉，未找到相关答案。'}, ensure_ascii=False)}\n\n"
+            yield f"data: {json_module.dumps({'type': 'answer', 'text': NO_RESULT_HINT}, ensure_ascii=False)}\n\n"
             yield f"data: {json_module.dumps({'type': 'done'})}\n\n"
             return
 
@@ -289,6 +328,8 @@ async def ask_stream(req: AskRequest):
             first = full_answer[:30]
             yield f"data: {json_module.dumps({'type': 'token', 'text': first}, ensure_ascii=False)}\n\n"
             yield f"data: {json_module.dumps({'type': 'done', 'answer': full_answer, 'mode': 'retrieval', 'similarity': best['similarity'], 'knowledge_point': best['knowledge_point'], 'sources': [{'question': r['question'], 'knowledge_point': r['knowledge_point'], 'similarity': r['similarity']} for r in results], 'results': results}, ensure_ascii=False)}\n\n"
+            # 记录会话轮次, 使多轮上下文/追问在流式路径同样生效
+            conv_manager.add_turn(session_id, req.question, full_answer)
             return
 
         # RAG 流式生成
@@ -313,6 +354,7 @@ async def ask_stream(req: AskRequest):
             yield f"data: {json_module.dumps({'type': 'error', 'text': str(e)})}\n\n"
 
         clean_answer = sanitize_answer(full_text)
+        conv_manager.add_turn(session_id, req.question, clean_answer)
         yield f"data: {json_module.dumps({'type': 'done', 'answer': clean_answer, 'mode': 'rag', 'similarity': best['similarity'], 'knowledge_point': best['knowledge_point'], 'sources': [{'question': r['question'], 'knowledge_point': r['knowledge_point'], 'similarity': r['similarity']} for r in results], 'results': results}, ensure_ascii=False)}\n\n"
 
     response = StreamingResponse(generate(), media_type="text/event-stream")
