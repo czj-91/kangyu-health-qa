@@ -23,6 +23,13 @@ def init_env():
     except ImportError:
         pass
 
+
+# 关键修复：.env 必须在下方所有 os.getenv 常量求值之前加载。
+# 历史上调用方在 `from config import ...` 之后才调 init_env()，那时常量已绑定，
+# 导致 .env 中的值（TOP_K_RETRIEVAL / AGENT_API_KEY 等）被静默忽略、全部走默认值。
+# 现在导入 config 即完成环境加载；init_env() 仍导出且幂等，兼容既有调用点。
+init_env()
+
 # ── 嵌入模型 ─────────────────────────────────────────────
 # 医疗健康领域默认使用基础 chinese-macbert-base 作为语义编码器。
 # 如需更优检索效果，可在健康数据集上微调（见 train.py），微调模型输出到下方目录。
@@ -77,6 +84,20 @@ CONVERSATION_BACKEND = os.getenv("CONVERSATION_BACKEND", "memory")  # "memory" |
 DATA_DIR = os.getenv("DATA_DIR", str(ROOT_DIR / "data" / "processed"))
 RAW_DATA_DIR = os.getenv("RAW_DATA_DIR", str(ROOT_DIR / "data" / "Health-QA-Dataset"))
 FEEDBACK_PATH = os.getenv("FEEDBACK_PATH", str(ROOT_DIR / "data" / "feedback.jsonl"))
+
+# ── Agent (Agentic RAG) ─────────────────────────────────
+AGENT_MAX_STEPS = int(os.getenv("AGENT_MAX_STEPS", "8"))            # 最大决策步数
+AGENT_TOKEN_BUDGET = int(os.getenv("AGENT_TOKEN_BUDGET", "12000"))  # 累计 token 预算
+AGENT_WALL_TIMEOUT = int(os.getenv("AGENT_WALL_TIMEOUT", "180"))    # 单问墙钟超时(秒)
+AGENT_MAX_TOKENS = int(os.getenv("AGENT_MAX_TOKENS", "900"))        # 单次模型调用输出上限
+AGENT_MAX_TOOL_RESULT_CHARS = int(os.getenv("AGENT_MAX_TOOL_RESULT_CHARS", "2600"))
+AGENT_SNIPPET_CHARS = int(os.getenv("AGENT_SNIPPET_CHARS", "160"))  # 检索结果中答案摘要长度
+AGENT_TRACE_DIR = os.getenv("AGENT_TRACE_DIR", str(ROOT_DIR / "logs" / "agent_traces"))
+
+# Agent 专用 LLM (需支持 Function Calling); 未设置时回落到 API_* 配置
+AGENT_API_BASE_URL = os.getenv("AGENT_API_BASE_URL", API_BASE_URL)
+AGENT_API_KEY = os.getenv("AGENT_API_KEY", API_KEY)
+AGENT_API_MODEL = os.getenv("AGENT_API_MODEL", API_MODEL)
 
 # ── 服务 ─────────────────────────────────────────────────
 HOST = os.getenv("HOST", "0.0.0.0")

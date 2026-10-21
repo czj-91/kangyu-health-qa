@@ -163,6 +163,42 @@ class APILLMEngine:
         finally:
             gen.close()
 
+    def chat_with_tools(self, messages: list[dict], tools: list[dict],
+                        max_tokens: int | None = None) -> dict:
+        """带 Function Calling 的非流式对话 — Agent 循环专用。
+
+        返回 OpenAI 兼容响应中的 assistant message 与 usage::
+
+            {"message": {"content": str|None, "tool_calls": [...]}, "usage": {...}}
+        """
+        body = {
+            "model": self.model,
+            "messages": messages,
+            "tools": tools,
+            "tool_choice": "auto",
+            "max_tokens": max_tokens or API_MAX_TOKENS,
+            "temperature": LLM_TEMPERATURE,
+            "top_p": LLM_TOP_P,
+            "stream": False,
+        }
+        try:
+            resp = requests.post(
+                f"{self.base_url}/chat/completions",
+                headers=self._headers(),
+                json=body,
+                timeout=API_TIMEOUT,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            choice = data["choices"][0]["message"]
+            return {"message": choice, "usage": data.get("usage") or {}}
+        except requests.exceptions.Timeout:
+            raise RuntimeError(f"API 请求超时 ({API_TIMEOUT}s)")
+        except requests.exceptions.RequestException as e:
+            raise RuntimeError(f"API 请求失败: {e}")
+        except (KeyError, IndexError, ValueError) as e:
+            raise RuntimeError(f"API 响应格式异常: {e}")
+
     def load(self):
         """API 模式无需加载模型，仅验证配置"""
         if not self.api_key:

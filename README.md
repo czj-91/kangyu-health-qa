@@ -43,8 +43,9 @@ flowchart LR
 | 流式输出 | SSE token 级推送，类 ChatGPT 打字机体验 |
 | 医疗安全护栏 | Prompt 层不诊断、不替代就医、急症引导 120、用药遵医嘱；前端常驻免责声明 |
 | 知识库 | 5,915 条医疗问答 / 23 个主题（内科、外科、妇产、儿科、肿瘤、心理、中医养生等） |
-| 可观测 | Loguru 结构化日志、用户反馈 JSONL 持久化与统计 |
-| 工程质量 | pytest 92 条测试（43 单测 + 49 集成）、GitHub Actions CI、Docker 多阶段非 root 构建 + 健康检查 |
+| Agentic RAG | 检索/读全文工具封装为标准 **MCP Server**（stdio），Agent 经 Function Calling 自主决策重检索与改写；步数/token/墙钟三重预算 + 证据归属校验，超限自动降级回固定管线 |
+| 可观测 | Loguru 结构化日志、用户反馈 JSONL 持久化与统计、Agent 决策轨迹 JSONL |
+| 工程质量 | pytest 185 条测试（136 单测 + 49 集成）、GitHub Actions CI、Docker 多阶段非 root 构建 + 健康检查 |
 
 ## 检索质量评测
 
@@ -68,6 +69,54 @@ flowchart LR
 
 > 复现命令：`python evaluation/retrieval_eval.py --sample 200 --seed 42`，报告输出至 `evaluation/results/retrieval_eval.json`。
 
+## Agentic RAG（MCP 工具化 + Function Calling）
+
+在固定管线之外，提供一层**模型自主决策**的检索 Agent，与线上管线共存、互为降级：
+
+- **MCP Server**（`agent/mcp_server.py`）：把 `hybrid_search` / `get_document` / `kb_stats` 与知识库 resource 封装为标准 MCP 工具，stdio 传输；除本项目 Agent 外，任意 MCP 客户端（Claude Desktop / Cursor 等）可直接接入。
+- **决策循环**（`agent/loop.py`）：LLM 通过 Function Calling 自主决定检索次数、改写查询、读全文取证，以 `finalize_answer`（带证据引用）或 `ask_clarification`（澄清反问）终止。
+- **确定性护栏**：步数/token/墙钟三重预算，超限先"强制终止"再降级；`finalize_answer` 的 `evidence_ids` 必须属于本会话真实检索命中集（Pydantic 契约 + 证据归属校验，编造 id 会被拒绝回喂修正）；`get_document` 受服务端**检索白名单**约束，防任意文档读取；任何失败路径统一降级到既有三级降级管线，用户永远有答案。
+- **决策轨迹**：每轮问答的 assistant 决策 / 工具调用 / 拒绝事件保存为 JSONL（`logs/agent_traces/`），可复盘。
+- 注意：Agent 需要支持 Function Calling 的 API 模型（本地 1.5B INT8 不具备，会自动走降级链，属预期行为）。
+
+```bash
+# MCP 工具链路自检（不调 LLM）
+python -m agent.cli --no-llm --transport stdio
+
+# 单次提问 / 交互模式（需 API_KEY 或 AGENT_API_KEY）
+python -m agent.cli -q "感冒了怎么办"
+python -m agent.cli -i
+```
+
+对比评测（与检索评测同口径抽样，截断输入正是 Agent 改写重检的收益场景，支持断点续跑）：
+
+```bash
+python evaluation/agent_eval.py --tag p15 --sample 40 --seed 42                       # 管线 vs Agent
+python evaluation/agent_eval.py --tag p8  --sample 40 --seed 42 --modes partial --partial-len 8
+```
+
+### 验证状态（2026-10-20，真实模型：deepseek-chat）
+
+端到端演示（CLI，轨迹保存于 `logs/agent_traces/`）：
+
+| 场景 | 行为 | 结果 |
+|---|---|---|
+| 正常题「感冒流鼻涕低烧」 | 5 步 8 次工具调用：并行改写双检索 → 读 4 篇全文 → 追加检索就医指征 | 引用 4 条证据，不诊断、建议药师/医生 |
+| 急症题「剧烈胸痛+呼吸困难」 | 2 步快速收敛 | 首句引导拨打 120，未给自行处理方案 |
+| 截断题「宝宝发烧38度」 | 4 步，含改写重检 | 给出体温监测记录与就诊建议 |
+
+对比评测初步结果（n=40 抽样、full+partial 双模式；因 API 账户余额中断，Agent 侧为**中断前有效的 44 条运行**，数字口径如实标注，完整重跑待补）：
+
+| 配置 | 指标 | 数值 |
+|---|---|---|
+| pipeline（固定管线） | Hit@1 / Recall@5（纯检索指标，全样本有效） | 1.00 / 1.00 |
+| agent（有效 44 条内） | 自主回答率 | 0.91 |
+| agent | gold 进入本轮检索命中集 | 0.91 |
+| agent | gold 被最终引用（证据归属通过） | 0.86 |
+| agent | 平均步数 / tokens | ≈3 / ≈13k |
+
+> ⚠️ 诚实声明：上表 agent 行样本量小（44）且截断难例（partial8）批次未跑成，**尚不足以宣称 Agent 相对管线的量化增益**；当前能确证的是行为正确性与证据引用质量。充值 API 账户后重跑 `--tag` 即可补齐（断点续跑自动跳过已完成项）。
+
 ## 项目结构
 
 ```
@@ -82,7 +131,8 @@ flowchart LR
 ├── train.py               # 历史实验：早期 QACP 知识点问答的分类头微调脚本
 ├── build_kb.py            # 健康知识库构建脚本（生成向量与问答库）
 ├── retriever/             # 混合检索: 向量存储 / BM25 / RRF+Rerank
-├── evaluation/            # RAGAS 端到端评估 + 检索质量评测
+├── agent/                 # Agentic RAG: MCP Server / Function Calling 循环 / CLI
+├── evaluation/            # RAGAS 端到端评估 + 检索质量评测 + Agent 对比评测
 ├── tests/                 # pytest: 单测(快) + integration(加载模型, 慢)
 ├── templates/             # 前端 SPA（青绿健康主题 + 免责横幅）
 ├── .github/workflows/     # CI
@@ -151,6 +201,9 @@ pytest -q -m integration         # 全链路集成测试（需本地模型权重
 | `FINE_TUNED_MODEL_DIR` | `model/health_macbert` | 健康知识库目录（含 qa_library.json） |
 | `TOP_K_RETRIEVAL` | `5` | 最终返回数量 |
 | `ENABLE_RERANKER` | `true` | 启用 BGE Reranker |
+| `AGENT_API_KEY` | 同 `API_KEY` | Agent 专用密钥（需支持 Function Calling 的模型） |
+| `AGENT_API_MODEL` / `AGENT_API_BASE_URL` | 同 `API_*` | Agent 专用模型端点 |
+| `AGENT_MAX_STEPS` / `AGENT_TOKEN_BUDGET` / `AGENT_WALL_TIMEOUT` | `8` / `12000` / `180` | Agent 三重预算 |
 | `DEBUG` | `false` | 调试模式 |
 
 ## API 接口
