@@ -128,13 +128,16 @@ async def amain(args):
             if "partial" in args.modes:
                 modes.append(("partial_q", full_q[:args.partial_len]))
 
+            # 任一配置缺行即进入（各配置分支内部再独立跳过已完成项）
             todo = [(m, q) for m, q in modes
-                    if all((cfg, m, int(idx)) not in done for cfg in args.configs)]
+                    if any((cfg, m, int(idx)) not in done for cfg in args.configs)]
             if not todo:
                 continue
 
             for mode, query in todo:
                 if args.dry_retrieval:
+                    if ("dry", mode, int(idx)) in done:
+                        continue
                     hits = kb_tools.hybrid_search(query, TOP_K)
                     ids = [r["id"] for r in hits.get("results", [])]
                     emit({"cfg": "dry", "mode": mode, "idx": int(idx), "gold": gold,
